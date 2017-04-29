@@ -4583,7 +4583,7 @@
       </component>
     </components>
     <files>
-      <file attr="config" category="source" condition="ARM Compiler" name="Device\Source\arm\arm_startup_nrf52840.s" version="8.12.0">
+      <file attr="config" category="source" condition="ARM Compiler" name="Device\Source\arm\arm_startup_nrf52840.s" version="8.13.0">
         <instance index="0">RTE\Device\nRF52840_xxAA\arm_startup_nrf52840.s</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="NordicSemiconductor" Cversion="8.12.0" condition="nRF52840 Device and CMSIS"/>
         <package license="License\license.txt" name="nRF_DeviceFamilyPack" schemaVersion="1.3" url="http://developer.nordicsemi.com/nRF5_SDK/pieces/nRF_DeviceFamilyPack/" vendor="NordicSemiconductor" version="8.12.0"/>
@@ -4592,7 +4592,7 @@
           <targetInfo name="nrf52840_xxaa"/>
         </targetInfos>
       </file>
-      <file attr="config" category="source" name="Device\Source\system_nrf52840.c" version="8.12.0">
+      <file attr="config" category="source" name="Device\Source\system_nrf52840.c" version="8.13.0">
         <instance index="0">RTE\Device\nRF52840_xxAA\system_nrf52840.c</instance>
         <component Cclass="Device" Cgroup="Startup" Cvendor="NordicSemiconductor" Cversion="8.12.0" condition="nRF52840 Device and CMSIS"/>
         <package license="License\license.txt" name="nRF_DeviceFamilyPack" schemaVersion="1.3" url="http://developer.nordicsemi.com/nRF5_SDK/pieces/nRF_DeviceFamilyPack/" vendor="NordicSemiconductor" version="8.12.0"/>
