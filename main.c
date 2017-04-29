@@ -67,6 +67,9 @@
 #include "ble_image_transfer_service.h"
 
 #include "cl_includes.h"
+#include "cl_system.h"
+#include "cl_hal_gpio.h"
+#include "app_display.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
@@ -82,8 +85,8 @@
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(10, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
@@ -102,6 +105,13 @@ static nrf_ble_gatt_t                   m_gatt;                                 
 static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
 static uint16_t                         m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
+static uint8_t                          m_new_command_received = 0;
+static uint8_t                          m_new_resolution;
+
+using namespace CppLib;
+
+ArducamMini2MP myCamera;
+Button button1(BUTTON_1, true);
 
 /**@brief Function for assert macro callback.
  *
@@ -162,28 +172,28 @@ static void gap_params_init(void)
 /**@snippet [Handling the data received over BLE] */
 static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
 {
-    uint32_t err_code;
-
-    NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on UART.\r\n");
-    NRF_LOG_HEXDUMP_DEBUG(p_data, length);
-
-    for (uint32_t i = 0; i < length; i++)
+   
+    switch(p_data[0])
     {
-        do
-        {
-            err_code = app_uart_put(p_data[i]);
-            if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
-            {
-                NRF_LOG_ERROR("Failed receiving NUS message. Error 0x%x. \r\n", err_code);
-                APP_ERROR_CHECK(err_code);
-            }
-        } while (err_code == NRF_ERROR_BUSY);
+        // Take picture
+        case 1:
+            m_new_command_received = 1;
+            break;
+        
+        // Start streaming
+        case 2:
+            m_new_command_received = 2;
+            break;
+        
+        case 3:
+            m_new_command_received = 3;
+            m_new_resolution = p_data[1];
+            break;
+        
+        default: 
+            printf("Unknown command!!\r\n");
+            break;
     }
-    if (p_data[length-1] == '\r')
-    {
-        while (app_uart_put('\n') == NRF_ERROR_BUSY);
-    }
-
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -335,7 +345,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             APP_ERROR_CHECK(err_code);
             break; // BLE_GAP_EVT_SEC_PARAMS_REQUEST
 
-         case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
+        case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
         {
             ble_gap_data_length_params_t dl_params;
 
@@ -345,6 +355,13 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             APP_ERROR_CHECK(err_code);
         } break;
 
+        case BLE_GAP_EVT_CONN_PARAM_UPDATE:
+        {
+            uint16_t max_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.max_conn_interval;
+            uint16_t min_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.min_conn_interval;
+            printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
+        } break;
+        
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
             // No system attributes have been stored.
             err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
@@ -491,9 +508,9 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, const nrf_ble_gatt_evt_t * p_evt)
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
         m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        NRF_LOG_INFO("Data len is set to 0x%X(%d)\r\n", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
+        printf("Data len is set to 0x%X(%d)\r\n", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
     }
-    NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
+    printf("ATT MTU exchange completed. central 0x%x peripheral 0x%x\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
 }
 
 
@@ -657,24 +674,6 @@ static void advertising_init(void)
 }
 
 
-/**@brief Function for initializing buttons and leds.
- *
- * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
- */
-static void buttons_leds_init(bool * p_erase_bonds)
-{
-    bsp_event_t startup_event;
-
-    uint32_t err_code = bsp_init(BSP_INIT_LED | BSP_INIT_BUTTONS, bsp_event_handler);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = bsp_btn_ble_init(NULL, &startup_event);
-    APP_ERROR_CHECK(err_code);
-
-    *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
-}
-
-
 /**@brief Function for initializing the nrf log module.
  */
 static void log_init(void)
@@ -692,14 +691,22 @@ static void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
+void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, char *message)
+{
+    printf("%s - %s\r\n", module, message);
+}
+
 #define TEST_FILE_SIZE 2000
+#define IMAGE_MAX_SIZE 200000
 uint8_t test_file[TEST_FILE_SIZE];
+
+uint8_t jpg_buf[IMAGE_MAX_SIZE];
+
 /**@brief Application main function.
  */
 int main(void)
 {
     uint32_t err_code;
-    bool     erase_bonds;
 
     // Initialize.
     err_code = app_timer_init();
@@ -708,7 +715,6 @@ int main(void)
     uart_init();
     log_init();
 
-    buttons_leds_init(&erase_bonds);
     ble_stack_init();
     gap_params_init();
     gatt_init();
@@ -718,23 +724,72 @@ int main(void)
 
     printf("\r\nUART Start!\r\n");
 
+    nrfSystem.setLogHandler(cpplibLogFunction);
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
+    
+    myCamera.open();
+    myCamera.setResolution(OV2640_320x240);
     
     for(int i = 0; i < TEST_FILE_SIZE; i++)
     {
         test_file[i] = (i + 32) % 256;
     }
     
+    for(int i = 0; i < IMAGE_MAX_SIZE; i++) jpg_buf[i] = 0xCC;
+    
     // Enter main loop.
     for (;;)
     {
-        power_manage();
-        if(bsp_button_is_pressed(BSP_BOARD_BUTTON_2))
+        //power_manage();
+        if(button1.isPressed() || m_new_command_received == 1)
         {
-            while(bsp_button_is_pressed(BSP_BOARD_BUTTON_2));
-            ble_its_send_file(&m_nus, test_file, TEST_FILE_SIZE);
-            printf("\r\nUART 3333Start!\r\n");
+            uint32_t image_size;
+            m_new_command_received = 0;
+            //ble_its_send_file(&m_nus, test_file, TEST_FILE_SIZE);
+            printf("Starting capture...\r\n");
+            myCamera.startSingleCapture();
+            image_size = myCamera.bytesAvailable();
+            printf("Capture complete: size %i bytes\r\n", (int)(image_size));
+            
+            if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
+            {
+                printf("Readout finished!\r\n");
+                ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+            }
+        }
+        if(m_new_command_received == 3)
+        {
+            m_new_command_received = 0;
+            
+            printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
+            switch(m_new_resolution)
+            {
+                case 0:
+                    myCamera.setResolution(OV2640_160x120);
+                    break;
+                
+                case 1:
+                    myCamera.setResolution(OV2640_320x240);
+                    break;
+
+                case 2:
+                    myCamera.setResolution(OV2640_640x480);
+                    break;
+
+                case 3:
+                    myCamera.setResolution(OV2640_800x600);
+                    break;
+
+                case 4:
+                    myCamera.setResolution(OV2640_1024x768);
+                    break;
+                
+                case 5:
+                    myCamera.setResolution(OV2640_1600x1200);
+                    break;
+                
+            }
         }
     }
 }

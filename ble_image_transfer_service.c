@@ -55,7 +55,7 @@
 #include "nrf_log.h"
 
 
-volatile uint32_t file_size = 0, file_pos = 0;
+volatile uint32_t file_size = 0, file_pos = 0, m_max_data_length = 20;
 uint8_t * file_data;
 ble_nus_t * m_nusut;
 
@@ -317,7 +317,7 @@ static uint32_t rx_char_add(ble_nus_t * p_nus, const ble_nus_init_t * p_nus_init
 static uint32_t push_data_packets()
 {
     uint32_t return_code = NRF_SUCCESS;
-    uint32_t packet_length = 20;
+    uint32_t packet_length = m_max_data_length;
     while(return_code == NRF_SUCCESS)
     {
         if((file_size - file_pos) > packet_length)
@@ -476,7 +476,7 @@ uint32_t ble_its_img_info_send(ble_nus_t * p_nus, ble_its_img_info_t * img_info)
 }
 
 
-uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_length)
+uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_length, uint32_t max_packet_length)
 {
     uint32_t err_code; 
     
@@ -497,6 +497,7 @@ uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_le
     file_size = data_length;
     file_pos = 0;
     file_data = p_data;
+    m_max_data_length = max_packet_length;
     m_nusut = p_nus;
    
     err_code = push_data_packets();

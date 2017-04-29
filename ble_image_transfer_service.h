@@ -160,7 +160,7 @@ void ble_nus_on_ble_evt(ble_nus_t * p_nus, ble_evt_t * p_ble_evt);
  */
 uint32_t ble_nus_string_send(ble_nus_t * p_nus, uint8_t * p_string, uint16_t length);
 
-uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_length);
+uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_length, uint32_t max_packet_length);
 
 #ifdef __cplusplus
 }

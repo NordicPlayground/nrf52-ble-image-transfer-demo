@@ -333,9 +333,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls>--reduce_paths</MiscControls>
-              <Define>BLE_STACK_SUPPORT_REQD BOARD_PCA10056 CONFIG_GPIO_AS_PINRESET NRF52840_XXAA NRF_SD_BLE_API_VERSION=5 S140 SOFTDEVICE_PRESENT SWI_DISABLE0 DEBUG</Define>
+              <Define>BLE_STACK_SUPPORT_REQD BOARD_PCA10056 CONFIG_GPIO_AS_PINRESET NRF52840_XXAA NRF_SD_BLE_API_VERSION=5 S140 SOFTDEVICE_PRESENT SWI_DISABLE0 OV2640_MINI_2MP DEBUG</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\config\ble_app_uart_pca10056_s140;..\..\..\config;..\..\..\..\..\..\components;..\..\..\..\..\..\components\ble\ble_advertising;..\..\..\..\..\..\components\ble\ble_dtm;..\..\..\..\..\..\components\ble\ble_racp;..\..\..\..\..\..\components\ble\ble_services\ble_ancs_c;..\..\..\..\..\..\components\ble\ble_services\ble_ans_c;..\..\..\..\..\..\components\ble\ble_services\ble_bas;..\..\..\..\..\..\components\ble\ble_services\ble_bas_c;..\..\..\..\..\..\components\ble\ble_services\ble_cscs;..\..\..\..\..\..\components\ble\ble_services\ble_cts_c;..\..\..\..\..\..\components\ble\ble_services\ble_dfu;..\..\..\..\..\..\components\ble\ble_services\ble_dis;..\..\..\..\..\..\components\ble\ble_services\ble_gls;..\..\..\..\..\..\components\ble\ble_services\ble_hids;..\..\..\..\..\..\components\ble\ble_services\ble_hrs;..\..\..\..\..\..\components\ble\ble_services\ble_hrs_c;..\..\..\..\..\..\components\ble\ble_services\ble_hts;..\..\..\..\..\..\components\ble\ble_services\ble_ias;..\..\..\..\..\..\components\ble\ble_services\ble_ias_c;..\..\..\..\..\..\components\ble\ble_services\ble_lbs;..\..\..\..\..\..\components\ble\ble_services\ble_lbs_c;..\..\..\..\..\..\components\ble\ble_services\ble_lls;..\..\..\..\..\..\components\ble\ble_services\ble_nus;..\..\..\..\..\..\components\ble\ble_services\ble_nus_c;..\..\..\..\..\..\components\ble\ble_services\ble_rscs;..\..\..\..\..\..\components\ble\ble_services\ble_rscs_c;..\..\..\..\..\..\components\ble\ble_services\ble_tps;..\..\..\..\..\..\components\ble\common;..\..\..\..\..\..\components\ble\nrf_ble_gatt;..\..\..\..\..\..\components\ble\nrf_ble_qwr;..\..\..\..\..\..\components\ble\peer_manager;..\..\..\..\..\..\components\boards;..\..\..\..\..\..\components\drivers_nrf\clock;..\..\..\..\..\..\components\drivers_nrf\common;..\..\..\..\..\..\components\drivers_nrf\comp;..\..\..\..\..\..\components\drivers_nrf\delay;..\..\..\..\..\..\components\drivers_nrf\gpiote;..\..\..\..\..\..\components\drivers_nrf\hal;..\..\..\..\..\..\components\drivers_nrf\i2s;..\..\..\..\..\..\components\drivers_nrf\lpcomp;..\..\..\..\..\..\components\drivers_nrf\pdm;..\..\..\..\..\..\components\drivers_nrf\power;..\..\..\..\..\..\components\drivers_nrf\ppi;..\..\..\..\..\..\components\drivers_nrf\pwm;..\..\..\..\..\..\components\drivers_nrf\qdec;..\..\..\..\..\..\components\drivers_nrf\rng;..\..\..\..\..\..\components\drivers_nrf\rtc;..\..\..\..\..\..\components\drivers_nrf\saadc;..\..\..\..\..\..\components\drivers_nrf\spi_master;..\..\..\..\..\..\components\drivers_nrf\spi_slave;..\..\..\..\..\..\components\drivers_nrf\swi;..\..\..\..\..\..\components\drivers_nrf\timer;..\..\..\..\..\..\components\drivers_nrf\twi_master;..\..\..\..\..\..\components\drivers_nrf\twis_slave;..\..\..\..\..\..\components\drivers_nrf\uart;..\..\..\..\..\..\components\drivers_nrf\usbd;..\..\..\..\..\..\components\drivers_nrf\wdt;..\..\..\..\..\..\components\libraries\bsp;..\..\..\..\..\..\components\libraries\button;..\..\..\..\..\..\components\libraries\crc16;..\..\..\..\..\..\components\libraries\crc32;..\..\..\..\..\..\components\libraries\csense;..\..\..\..\..\..\components\libraries\csense_drv;..\..\..\..\..\..\components\libraries\ecc;..\..\..\..\..\..\components\libraries\experimental_section_vars;..\..\..\..\..\..\components\libraries\fds;..\..\..\..\..\..\components\libraries\fifo;..\..\..\..\..\..\components\libraries\fstorage;..\..\..\..\..\..\components\libraries\gpiote;..\..\..\..\..\..\components\libraries\hardfault;..\..\..\..\..\..\components\libraries\hci;..\..\..\..\..\..\components\libraries\led_softblink;..\..\..\..\..\..\components\libraries\log;..\..\..\..\..\..\components\libraries\log\src;..\..\..\..\..\..\components\libraries\low_power_pwm;..\..\..\..\..\..\components\libraries\mem_manager;..\..\..\..\..\..\components\libraries\pwm;..\..\..\..\..\..\components\libraries\queue;..\..\..\..\..\..\components\libraries\scheduler;..\..\..\..\..\..\components\libraries\slip;..\..\..\..\..\..\components\libraries\strerror;..\..\..\..\..\..\components\libraries\timer;..\..\..\..\..\..\components\libraries\twi;..\..\..\..\..\..\components\libraries\uart;..\..\..\..\..\..\components\libraries\usbd;..\..\..\..\..\..\components\libraries\usbd\class\audio;..\..\..\..\..\..\components\libraries\usbd\class\cdc;..\..\..\..\..\..\components\libraries\usbd\class\cdc\acm;..\..\..\..\..\..\components\libraries\usbd\class\hid;..\..\..\..\..\..\components\libraries\usbd\class\hid\generic;..\..\..\..\..\..\components\libraries\usbd\class\hid\kbd;..\..\..\..\..\..\components\libraries\usbd\class\hid\mouse;..\..\..\..\..\..\components\libraries\usbd\class\msc;..\..\..\..\..\..\components\libraries\usbd\config;..\..\..\..\..\..\components\libraries\util;..\..\..\..\..\..\components\softdevice\common\softdevice_handler;..\..\..\..\..\..\components\softdevice\s140\headers;..\..\..\..\..\..\components\softdevice\s140\headers\nrf52;..\..\..\..\..\..\components\toolchain;..\..\..\..\..\..\external\segger_rtt;..\config;..\..\..\..\..\..\components\cpplib</IncludePath>
+              <IncludePath>..\..\..\config\ble_app_uart_pca10056_s140;..\..\..\config;..\..\..\..\..\..\components;..\..\..\..\..\..\components\ble\ble_advertising;..\..\..\..\..\..\components\ble\ble_dtm;..\..\..\..\..\..\components\ble\ble_racp;..\..\..\..\..\..\components\ble\ble_services\ble_ancs_c;..\..\..\..\..\..\components\ble\ble_services\ble_ans_c;..\..\..\..\..\..\components\ble\ble_services\ble_bas;..\..\..\..\..\..\components\ble\ble_services\ble_bas_c;..\..\..\..\..\..\components\ble\ble_services\ble_cscs;..\..\..\..\..\..\components\ble\ble_services\ble_cts_c;..\..\..\..\..\..\components\ble\ble_services\ble_dfu;..\..\..\..\..\..\components\ble\ble_services\ble_dis;..\..\..\..\..\..\components\ble\ble_services\ble_gls;..\..\..\..\..\..\components\ble\ble_services\ble_hids;..\..\..\..\..\..\components\ble\ble_services\ble_hrs;..\..\..\..\..\..\components\ble\ble_services\ble_hrs_c;..\..\..\..\..\..\components\ble\ble_services\ble_hts;..\..\..\..\..\..\components\ble\ble_services\ble_ias;..\..\..\..\..\..\components\ble\ble_services\ble_ias_c;..\..\..\..\..\..\components\ble\ble_services\ble_lbs;..\..\..\..\..\..\components\ble\ble_services\ble_lbs_c;..\..\..\..\..\..\components\ble\ble_services\ble_lls;..\..\..\..\..\..\components\ble\ble_services\ble_nus;..\..\..\..\..\..\components\ble\ble_services\ble_nus_c;..\..\..\..\..\..\components\ble\ble_services\ble_rscs;..\..\..\..\..\..\components\ble\ble_services\ble_rscs_c;..\..\..\..\..\..\components\ble\ble_services\ble_tps;..\..\..\..\..\..\components\ble\common;..\..\..\..\..\..\components\ble\nrf_ble_gatt;..\..\..\..\..\..\components\ble\nrf_ble_qwr;..\..\..\..\..\..\components\ble\peer_manager;..\..\..\..\..\..\components\boards;..\..\..\..\..\..\components\drivers_nrf\clock;..\..\..\..\..\..\components\drivers_nrf\common;..\..\..\..\..\..\components\drivers_nrf\comp;..\..\..\..\..\..\components\drivers_nrf\delay;..\..\..\..\..\..\components\drivers_nrf\gpiote;..\..\..\..\..\..\components\drivers_nrf\hal;..\..\..\..\..\..\components\drivers_nrf\i2s;..\..\..\..\..\..\components\drivers_nrf\lpcomp;..\..\..\..\..\..\components\drivers_nrf\pdm;..\..\..\..\..\..\components\drivers_nrf\power;..\..\..\..\..\..\components\drivers_nrf\ppi;..\..\..\..\..\..\components\drivers_nrf\pwm;..\..\..\..\..\..\components\drivers_nrf\qdec;..\..\..\..\..\..\components\drivers_nrf\rng;..\..\..\..\..\..\components\drivers_nrf\rtc;..\..\..\..\..\..\components\drivers_nrf\saadc;..\..\..\..\..\..\components\drivers_nrf\spi_master;..\..\..\..\..\..\components\drivers_nrf\spi_slave;..\..\..\..\..\..\components\drivers_nrf\swi;..\..\..\..\..\..\components\drivers_nrf\timer;..\..\..\..\..\..\components\drivers_nrf\twi_master;..\..\..\..\..\..\components\drivers_nrf\twis_slave;..\..\..\..\..\..\components\drivers_nrf\uart;..\..\..\..\..\..\components\drivers_nrf\usbd;..\..\..\..\..\..\components\drivers_nrf\wdt;..\..\..\..\..\..\components\libraries\bsp;..\..\..\..\..\..\components\libraries\button;..\..\..\..\..\..\components\libraries\crc16;..\..\..\..\..\..\components\libraries\crc32;..\..\..\..\..\..\components\libraries\csense;..\..\..\..\..\..\components\libraries\csense_drv;..\..\..\..\..\..\components\libraries\ecc;..\..\..\..\..\..\components\libraries\experimental_section_vars;..\..\..\..\..\..\components\libraries\fds;..\..\..\..\..\..\components\libraries\fifo;..\..\..\..\..\..\components\libraries\fstorage;..\..\..\..\..\..\components\libraries\gpiote;..\..\..\..\..\..\components\libraries\hardfault;..\..\..\..\..\..\components\libraries\hci;..\..\..\..\..\..\components\libraries\led_softblink;..\..\..\..\..\..\components\libraries\log;..\..\..\..\..\..\components\libraries\log\src;..\..\..\..\..\..\components\libraries\low_power_pwm;..\..\..\..\..\..\components\libraries\mem_manager;..\..\..\..\..\..\components\libraries\pwm;..\..\..\..\..\..\components\libraries\queue;..\..\..\..\..\..\components\libraries\scheduler;..\..\..\..\..\..\components\libraries\slip;..\..\..\..\..\..\components\libraries\strerror;..\..\..\..\..\..\components\libraries\timer;..\..\..\..\..\..\components\libraries\twi;..\..\..\..\..\..\components\libraries\uart;..\..\..\..\..\..\components\libraries\usbd;..\..\..\..\..\..\components\libraries\usbd\class\audio;..\..\..\..\..\..\components\libraries\usbd\class\cdc;..\..\..\..\..\..\components\libraries\usbd\class\cdc\acm;..\..\..\..\..\..\components\libraries\usbd\class\hid;..\..\..\..\..\..\components\libraries\usbd\class\hid\generic;..\..\..\..\..\..\components\libraries\usbd\class\hid\kbd;..\..\..\..\..\..\components\libraries\usbd\class\hid\mouse;..\..\..\..\..\..\components\libraries\usbd\class\msc;..\..\..\..\..\..\components\libraries\usbd\config;..\..\..\..\..\..\components\libraries\util;..\..\..\..\..\..\components\softdevice\common\softdevice_handler;..\..\..\..\..\..\components\softdevice\s140\headers;..\..\..\..\..\..\components\softdevice\s140\headers\nrf52;..\..\..\..\..\..\components\toolchain;..\..\..\..\..\..\external\segger_rtt;..\config;..\..\..\..\..\..\components\cpplib;..\..\..\..\..\..\components\cpplib\arducam_mini_2mp;..\..\..\..\..\..\components\cpplib\system;..\..\..\..\..\..\components\cpplib\hal</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -2198,6 +2198,41 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>CPP_Lib</GroupName>
+          <Files>
+            <File>
+              <FileName>cl_hal_spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_hal_gpio.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_gpio.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_hal_twi_master.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>ArduCAM.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_system.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\system\cl_system.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>app_display.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\app_display.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -4400,6 +4435,41 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>CPP_Lib</GroupName>
+          <Files>
+            <File>
+              <FileName>cl_hal_spi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_spi.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_hal_gpio.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_gpio.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_hal_twi_master.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>ArduCAM.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_system.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\system\cl_system.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>app_display.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\app_display.cpp</FilePath>
             </File>
           </Files>
         </Group>
