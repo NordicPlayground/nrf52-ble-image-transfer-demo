@@ -115,6 +115,8 @@ using namespace CppLib;
 ArducamMini2MP myCamera;
 Button button1(BUTTON_1, true);
 
+enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, APP_CMD_CHANGE_RESOLUTION};
+
 /**@brief Function for assert macro callback.
  *
  * @details This function will be called in case of an assert in the SoftDevice.
@@ -178,17 +180,14 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
     switch(p_data[0])
     {
         // Take picture
-        case 1:
-            m_new_command_received = 1;
+        case APP_CMD_SINGLE_CAPTURE:
+        case APP_CMD_START_STREAM:
+        case APP_CMD_STOP_STREAM:
+            m_new_command_received = p_data[0];
             break;
         
-        // Start streaming
-        case 2:
-            m_new_command_received = 2;
-            break;
-        
-        case 3:
-            m_new_command_received = 3;
+        case APP_CMD_CHANGE_RESOLUTION:
+            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
             m_new_resolution = p_data[1];
             break;
         
@@ -704,8 +703,6 @@ uint8_t test_file[TEST_FILE_SIZE];
 
 uint8_t jpg_buf[IMAGE_MAX_SIZE];
 
-enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_CHANGE_RESOLUTION};
-
 /**@brief Application main function.
  */
 int main(void)
@@ -767,17 +764,14 @@ int main(void)
             
             case APP_CMD_START_STREAM:
                 m_new_command_received = APP_CMD_NOCOMMAND;
-                m_stream_mode_active = !m_stream_mode_active;
-                if(m_stream_mode_active)
-                {
-                    printf("Stream mode enabled\r\n");
-                }
-                else
-                {
-                    printf("Stream mode disabled\r\n");
-                    
-                }
+                m_stream_mode_active = true;
+                printf("Stream mode enabled\r\n");                
+                break;
                 
+            case APP_CMD_STOP_STREAM:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                m_stream_mode_active = false;
+                printf("Stream mode disabled\r\n");
                 break;
                 
             case APP_CMD_CHANGE_RESOLUTION:
@@ -818,12 +812,12 @@ int main(void)
         
         if(m_stream_mode_active)
         {
+            while(ble_its_file_transfer_busy());
             myCamera.startSingleCapture();
             image_size = myCamera.bytesAvailable();
             if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
             {
                 ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
-                while(ble_its_file_transfer_busy());
             }
         }
     }
