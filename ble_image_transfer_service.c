@@ -117,12 +117,12 @@ static void on_write(ble_nus_t * p_nus, ble_evt_t * p_ble_evt)
     {
         if (ble_srv_is_notification_enabled(p_evt_write->data))
         {
-            //p_nus->is_notification_enabled = true;
+            p_nus->is_info_char_notification_enabled = true;
             printf("S1");
         }
         else
         {
-            //p_nus->is_notification_enabled = false;
+            p_nus->is_info_char_notification_enabled = false;
             printf("S0");
         }
     }
@@ -250,9 +250,9 @@ static uint32_t img_info_char_add(ble_nus_t * p_nus, const ble_nus_init_t * p_nu
 
     attr_char_value.p_uuid    = &ble_uuid;
     attr_char_value.p_attr_md = &attr_md;
-    attr_char_value.init_len  = sizeof(ble_its_img_info_t);
+    attr_char_value.init_len  = 1 + sizeof(ble_its_img_info_t);
     attr_char_value.init_offs = 0;
-    attr_char_value.max_len   = sizeof(ble_its_img_info_t);
+    attr_char_value.max_len   = 16;
 
     return sd_ble_gatts_characteristic_add(p_nus->service_handle,
                                            &char_md,
@@ -452,23 +452,54 @@ uint32_t ble_nus_string_send(ble_nus_t * p_nus, uint8_t * p_string, uint16_t len
     return sd_ble_gatts_hvx(p_nus->conn_handle, &hvx_params);
 }
 
-uint32_t ble_its_img_info_send(ble_nus_t * p_nus, ble_its_img_info_t * img_info)
+uint32_t ble_its_ble_params_info_send(ble_nus_t * p_nus, ble_its_ble_params_info_t * ble_params_info)
 {
+    uint8_t data_buf[1 + sizeof(ble_its_ble_params_info_t)];
     ble_gatts_hvx_params_t hvx_params;
 
     VERIFY_PARAM_NOT_NULL(p_nus);
 
-    if ((p_nus->conn_handle == BLE_CONN_HANDLE_INVALID) || (!p_nus->is_notification_enabled))
+    if ((p_nus->conn_handle == BLE_CONN_HANDLE_INVALID) || (!p_nus->is_info_char_notification_enabled))
     {
         return NRF_ERROR_INVALID_STATE;
     }
 
-    uint16_t length = sizeof(img_info);
+    uint16_t length = 1 + sizeof(ble_its_ble_params_info_t);
+
+    data_buf[0] = 2;
+    memcpy(&data_buf[1], ble_params_info, sizeof(ble_its_ble_params_info_t));
     
     memset(&hvx_params, 0, sizeof(hvx_params));
     
     hvx_params.handle = p_nus->img_info_handles.value_handle;
-    hvx_params.p_data = (uint8_t *)img_info;
+    hvx_params.p_data = data_buf;
+    hvx_params.p_len  = &length;
+    hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
+
+    return sd_ble_gatts_hvx(p_nus->conn_handle, &hvx_params);     
+}
+
+uint32_t ble_its_img_info_send(ble_nus_t * p_nus, ble_its_img_info_t * img_info)
+{
+    uint8_t data_buf[1 + sizeof(ble_its_img_info_t)];
+    ble_gatts_hvx_params_t hvx_params;
+
+    VERIFY_PARAM_NOT_NULL(p_nus);
+
+    if ((p_nus->conn_handle == BLE_CONN_HANDLE_INVALID) || (!p_nus->is_info_char_notification_enabled))
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    uint16_t length = 1 + sizeof(ble_its_img_info_t);
+
+    data_buf[0] = 1;
+    memcpy(&data_buf[1], img_info, sizeof(ble_its_img_info_t));
+    
+    memset(&hvx_params, 0, sizeof(hvx_params));
+    
+    hvx_params.handle = p_nus->img_info_handles.value_handle;
+    hvx_params.p_data = data_buf;
     hvx_params.p_len  = &length;
     hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
 

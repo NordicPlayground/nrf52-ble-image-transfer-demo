@@ -85,8 +85,8 @@
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(10, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(12, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
@@ -106,16 +106,19 @@ static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, 
 static uint16_t                         m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
 static uint8_t                          m_new_command_received = 0;
-static uint8_t                          m_new_resolution;
+static uint8_t                          m_new_resolution, m_new_phy;
 
 static bool                             m_stream_mode_active = false;
+
+static ble_its_ble_params_info_t        m_ble_params_info = {20, 50, 1, 1};
 
 using namespace CppLib;
 
 ArducamMini2MP myCamera;
 Button button1(BUTTON_1, true);
 
-enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, APP_CMD_CHANGE_RESOLUTION};
+enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, 
+      APP_CMD_CHANGE_RESOLUTION, APP_CMD_CHANGE_PHY, APP_CMD_SEND_BLE_PARAMS};
 
 /**@brief Function for assert macro callback.
  *
@@ -183,12 +186,18 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
         case APP_CMD_SINGLE_CAPTURE:
         case APP_CMD_START_STREAM:
         case APP_CMD_STOP_STREAM:
+        case APP_CMD_SEND_BLE_PARAMS:
             m_new_command_received = p_data[0];
             break;
         
         case APP_CMD_CHANGE_RESOLUTION:
             m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
             m_new_resolution = p_data[1];
+            break;
+        
+        case APP_CMD_CHANGE_PHY:
+            m_new_command_received = APP_CMD_CHANGE_PHY;
+            m_new_phy = p_data[1];
             break;
         
         default: 
@@ -329,7 +338,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
             APP_ERROR_CHECK(err_code);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-
+            
             printf("Connected\r\n");
             break; // BLE_GAP_EVT_CONNECTED
 
@@ -337,6 +346,14 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             err_code = bsp_indication_set(BSP_INDICATE_IDLE);
             APP_ERROR_CHECK(err_code);
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
+            
+            // Set the command to have the resolution returned to the default 320x240
+            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
+            m_new_resolution = 1;
+            
+            m_stream_mode_active = false;
+            m_ble_params_info.tx_phy = m_ble_params_info.rx_phy = 1;
+            
             printf("Disconnected\r\n");
             break; // BLE_GAP_EVT_DISCONNECTED
 
@@ -360,8 +377,18 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         {
             uint16_t max_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.max_conn_interval;
             uint16_t min_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.min_conn_interval;
+
+            m_ble_params_info.con_interval = max_con_int;
+            ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
             printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
         } break;
+        
+        case BLE_GAP_EVT_PHY_UPDATE:
+            m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
+            m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
+            ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+            printf("Phy update: %i, %i\r\n", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
+            break;
         
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
             // No system attributes have been stored.
@@ -509,9 +536,11 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, const nrf_ble_gatt_evt_t * p_evt)
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
         m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        printf("Data len is set to 0x%X(%d)\r\n", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
+        m_ble_params_info.mtu = m_ble_nus_max_data_len;
+        ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+        printf("Data len is set to 0x%X(%d), or maybe %i\r\n", m_ble_nus_max_data_len, m_ble_nus_max_data_len, p_evt->params.data_length);
     }
-    printf("ATT MTU exchange completed. central 0x%x peripheral 0x%x\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
+    printf("ATT MTU exchange completed. central %i peripheral %i\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
 }
 
 
@@ -675,6 +704,25 @@ static void advertising_init(void)
 }
 
 
+static void data_len_ext_set(bool status)
+{
+    uint8_t data_length = status ? (247 + 4) : (23 + 4);
+    (void) nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, data_length);
+}
+
+
+static void gatt_mtu_set(uint16_t att_mtu)
+{
+    ret_code_t err_code;
+
+    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+}
+
+
 /**@brief Function for initializing the nrf log module.
  */
 static void log_init(void)
@@ -698,7 +746,7 @@ void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, c
 }
 
 #define TEST_FILE_SIZE 2000
-#define IMAGE_MAX_SIZE 200000
+#define IMAGE_MAX_SIZE 150000
 uint8_t test_file[TEST_FILE_SIZE];
 
 uint8_t jpg_buf[IMAGE_MAX_SIZE];
@@ -728,22 +776,20 @@ int main(void)
     nrfSystem.setLogHandler(cpplibLogFunction);
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
+
+    data_len_ext_set(true);
     
+    gatt_mtu_set(247);
+
     myCamera.open();
     myCamera.setResolution(OV2640_320x240);
-    
-    for(int i = 0; i < TEST_FILE_SIZE; i++)
-    {
-        test_file[i] = (i + 32) % 256;
-    }
-    
-    for(int i = 0; i < IMAGE_MAX_SIZE; i++) jpg_buf[i] = 0xCC;
     
     // Enter main loop.
     for (;;)
     {
         uint32_t image_size;
-            
+        ble_gap_phys_t gap_phys_settings;    
+        
         //power_manage();
         switch(m_new_command_received)
         {
@@ -806,6 +852,19 @@ int main(void)
                 } 
                 break;
                 
+            case APP_CMD_CHANGE_PHY:   
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                printf("Attempting to change phy.\r\n");
+                gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+                gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+                sd_ble_gap_phy_request(m_nus.conn_handle, &gap_phys_settings);            
+                break;
+            
+            case APP_CMD_SEND_BLE_PARAMS:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+                break;
+            
             default:
                 break;
         }
