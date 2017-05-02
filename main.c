@@ -184,9 +184,17 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
     {
         // Take picture
         case APP_CMD_SINGLE_CAPTURE:
-        case APP_CMD_START_STREAM:
-        case APP_CMD_STOP_STREAM:
         case APP_CMD_SEND_BLE_PARAMS:
+            m_new_command_received = p_data[0];
+            break;
+        
+        case APP_CMD_START_STREAM:
+            m_stream_mode_active = true;
+            m_new_command_received = p_data[0];
+            break;
+
+        case APP_CMD_STOP_STREAM:
+            m_stream_mode_active = false;
             m_new_command_received = p_data[0];
             break;
         
@@ -810,7 +818,7 @@ int main(void)
             
             case APP_CMD_START_STREAM:
                 m_new_command_received = APP_CMD_NOCOMMAND;
-                m_stream_mode_active = true;
+
                 printf("Stream mode enabled\r\n");                
                 break;
                 
@@ -872,11 +880,14 @@ int main(void)
         if(m_stream_mode_active)
         {
             while(ble_its_file_transfer_busy());
-            myCamera.startSingleCapture();
-            image_size = myCamera.bytesAvailable();
-            if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
+            if(m_stream_mode_active)
             {
-                ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+                myCamera.startSingleCapture();
+                image_size = myCamera.bytesAvailable();
+                if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
+                {
+                    ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+                }
             }
         }
     }
