@@ -505,4 +505,9 @@ uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_le
     return err_code;
 }
 
+bool ble_its_file_transfer_busy()
+{
+    return file_size != 0;
+}
+
 #endif // NRF_MODULE_ENABLED(BLE_NUS)

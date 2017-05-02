@@ -162,6 +162,8 @@ uint32_t ble_nus_string_send(ble_nus_t * p_nus, uint8_t * p_string, uint16_t len
 
 uint32_t ble_its_send_file(ble_nus_t * p_nus, uint8_t * p_data, uint32_t data_length, uint32_t max_packet_length);
 
+bool ble_its_file_transfer_busy();
+
 #ifdef __cplusplus
 }
 #endif

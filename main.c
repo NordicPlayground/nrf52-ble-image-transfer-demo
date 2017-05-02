@@ -108,6 +108,8 @@ static uint16_t                         m_ble_nus_max_data_len = BLE_GATT_ATT_MT
 static uint8_t                          m_new_command_received = 0;
 static uint8_t                          m_new_resolution;
 
+static bool                             m_stream_mode_active = false;
+
 using namespace CppLib;
 
 ArducamMini2MP myCamera;
@@ -702,6 +704,8 @@ uint8_t test_file[TEST_FILE_SIZE];
 
 uint8_t jpg_buf[IMAGE_MAX_SIZE];
 
+enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_CHANGE_RESOLUTION};
+
 /**@brief Application main function.
  */
 int main(void)
@@ -741,54 +745,85 @@ int main(void)
     // Enter main loop.
     for (;;)
     {
+        uint32_t image_size;
+            
         //power_manage();
-        if(button1.isPressed() || m_new_command_received == 1)
+        switch(m_new_command_received)
         {
-            uint32_t image_size;
-            m_new_command_received = 0;
-            //ble_its_send_file(&m_nus, test_file, TEST_FILE_SIZE);
-            printf("Starting capture...\r\n");
+            case APP_CMD_SINGLE_CAPTURE:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                //ble_its_send_file(&m_nus, test_file, TEST_FILE_SIZE);
+                printf("Starting capture...\r\n");
+                myCamera.startSingleCapture();
+                image_size = myCamera.bytesAvailable();
+                printf("Capture complete: size %i bytes\r\n", (int)(image_size));
+                
+                if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
+                {
+                    printf("Readout finished!\r\n");
+                    ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+                }
+                break;
+            
+            case APP_CMD_START_STREAM:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                m_stream_mode_active = !m_stream_mode_active;
+                if(m_stream_mode_active)
+                {
+                    printf("Stream mode enabled\r\n");
+                }
+                else
+                {
+                    printf("Stream mode disabled\r\n");
+                    
+                }
+                
+                break;
+                
+            case APP_CMD_CHANGE_RESOLUTION:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
+                switch(m_new_resolution)
+                {
+                    case 0:
+                        myCamera.setResolution(OV2640_160x120);
+                        break;
+                    
+                    case 1:
+                        myCamera.setResolution(OV2640_320x240);
+                        break;
+
+                    case 2:
+                        myCamera.setResolution(OV2640_640x480);
+                        break;
+
+                    case 3:
+                        myCamera.setResolution(OV2640_800x600);
+                        break;
+
+                    case 4:
+                        myCamera.setResolution(OV2640_1024x768);
+                        break;
+                    
+                    case 5:
+                        myCamera.setResolution(OV2640_1600x1200);
+                        break;
+                    
+                } 
+                break;
+                
+            default:
+                break;
+        }
+        
+        if(m_stream_mode_active)
+        {
             myCamera.startSingleCapture();
             image_size = myCamera.bytesAvailable();
-            printf("Capture complete: size %i bytes\r\n", (int)(image_size));
-            
             if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
             {
-                printf("Readout finished!\r\n");
                 ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
-            }
-        }
-        if(m_new_command_received == 3)
-        {
-            m_new_command_received = 0;
-            
-            printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
-            switch(m_new_resolution)
-            {
-                case 0:
-                    myCamera.setResolution(OV2640_160x120);
-                    break;
-                
-                case 1:
-                    myCamera.setResolution(OV2640_320x240);
-                    break;
-
-                case 2:
-                    myCamera.setResolution(OV2640_640x480);
-                    break;
-
-                case 3:
-                    myCamera.setResolution(OV2640_800x600);
-                    break;
-
-                case 4:
-                    myCamera.setResolution(OV2640_1024x768);
-                    break;
-                
-                case 5:
-                    myCamera.setResolution(OV2640_1600x1200);
-                    break;
-                
+                while(ble_its_file_transfer_busy());
             }
         }
     }
