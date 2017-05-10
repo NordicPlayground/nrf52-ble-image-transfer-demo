@@ -11,6 +11,8 @@ Requirements
 ------------
 - nRF5 SDK version 13.0.0
 - nRF52840 DK (PCA10056)
+- Arducam Mini 2MP camera module (OV2640)
+	- [https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY](https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY "Amazon link")
 
 TODO
 ----
