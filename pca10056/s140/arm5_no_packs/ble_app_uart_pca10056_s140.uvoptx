@@ -150,9 +150,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>746</LineNumber>
+          <LineNumber>749</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>155070</Address>
+          <Address>159684</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -161,44 +161,12 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\..\..\main.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\nrf52840_xxaa\../../../main.c\746</Expression>
+          <Expression>\\nrf52840_xxaa\../../../main.c\749</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>113</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\..\..\ble_image_transfer_service.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>758</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
-          <Filename>..\..\..\main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression></Expression>
-        </Bp>
-        <Bp>
-          <Number>3</Number>
-          <Type>0</Type>
-          <LineNumber>749</LineNumber>
+          <LineNumber>776</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
           <ByteObject>0</ByteObject>
@@ -232,6 +200,11 @@
           <count>3</count>
           <WinNumber>1</WinNumber>
           <ItemText>jpg_buf</ItemText>
+        </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>dlp</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
@@ -452,6 +425,22 @@
           <ExecCommand></ExecCommand>
           <Expression></Expression>
         </Bp>
+        <Bp>
+          <Number>4</Number>
+          <Type>0</Type>
+          <LineNumber>776</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>0</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>0</BreakIfRCount>
+          <Filename>..\..\..\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression></Expression>
+        </Bp>
       </Breakpoint>
       <Tracepoint>
         <THDelay>0</THDelay>
@@ -647,7 +636,7 @@
       <GroupNumber>4</GroupNumber>
       <FileNumber>11</FileNumber>
       <FileType>1</FileType>
-      <tvExp>1</tvExp>
+      <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\..\..\..\components\ble\nrf_ble_gatt\nrf_ble_gatt.c</PathWithFileName>
@@ -995,7 +984,7 @@
 
   <Group>
     <GroupName>CPP_Lib</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1006,8 +995,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\hal\cl_hal_spi.cpp</PathWithFileName>
-      <FilenameWithoutPath>cl_hal_spi.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\hal\cl_hal_gpio.cpp</PathWithFileName>
+      <FilenameWithoutPath>cl_hal_gpio.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1018,8 +1007,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\hal\cl_hal_gpio.cpp</PathWithFileName>
-      <FilenameWithoutPath>cl_hal_gpio.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\hal\cl_hal_spi.cpp</PathWithFileName>
+      <FilenameWithoutPath>cl_hal_spi.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1030,7 +1019,7 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\hal\cl_hal_twi_master.cpp</PathWithFileName>
+      <PathWithFileName>..\..\..\cpplib\hal\cl_hal_twi_master.cpp</PathWithFileName>
       <FilenameWithoutPath>cl_hal_twi_master.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
@@ -1042,8 +1031,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\ArduCAM.cpp</PathWithFileName>
-      <FilenameWithoutPath>ArduCAM.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\app_display.cpp</PathWithFileName>
+      <FilenameWithoutPath>app_display.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1054,8 +1043,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\system\cl_system.cpp</PathWithFileName>
-      <FilenameWithoutPath>cl_system.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</PathWithFileName>
+      <FilenameWithoutPath>ArduCAM.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1066,8 +1055,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\..\..\..\components\cpplib\arducam_mini_2mp\app_display.cpp</PathWithFileName>
-      <FilenameWithoutPath>app_display.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\system\cl_system.cpp</PathWithFileName>
+      <FilenameWithoutPath>cl_system.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
