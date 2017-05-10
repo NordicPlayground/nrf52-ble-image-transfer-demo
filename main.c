@@ -41,7 +41,7 @@
  *
  * @defgroup ble_sdk_uart_over_ble_main main.c
  * @{
- * @ingroup  ble_sdk_app_nus_eval
+ * @ingroup  ble_sdk_app_its_eval
  * @brief    UART over BLE application main file.
  *
  * This file contains the source code for a sample application that uses the Nordic UART service.
@@ -80,7 +80,7 @@
 #define APP_FEATURE_NOT_SUPPORTED       BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2        /**< Reply when unsupported features are requested. */
 
 #define DEVICE_NAME                     "Nordic_IMAGE"                               /**< Name of device. Will be included in the advertising data. */
-#define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
+#define ITS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
@@ -98,12 +98,12 @@
 #define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
-static ble_nus_t                        m_nus;                                      /**< Structure to identify the Nordic UART Service. */
+static ble_its_t                        m_its;                                      /**< Structure to identify the Nordic UART Service. */
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 
 static nrf_ble_gatt_t                   m_gatt;                                     /**< GATT module instance. */
-static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
-static uint16_t                         m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_ITS_SERVICE, ITS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
+static uint16_t                         m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 
 static uint8_t                          m_new_command_received = 0;
 static uint8_t                          m_new_resolution, m_new_phy;
@@ -172,12 +172,12 @@ static void gap_params_init(void)
  * @details This function will process the data received from the Nordic UART BLE Service and send
  *          it to the UART module.
  *
- * @param[in] p_nus    Nordic UART Service structure.
+ * @param[in] p_its    Nordic UART Service structure.
  * @param[in] p_data   Data to be send to UART module.
  * @param[in] length   Length of the data.
  */
 /**@snippet [Handling the data received over BLE] */
-static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t length)
+static void its_data_handler(ble_its_t * p_its, uint8_t * p_data, uint16_t length)
 {
    
     switch(p_data[0])
@@ -221,13 +221,13 @@ static void nus_data_handler(ble_nus_t * p_nus, uint8_t * p_data, uint16_t lengt
 static void services_init(void)
 {
     uint32_t       err_code;
-    ble_nus_init_t nus_init;
+    ble_its_init_t its_init;
 
-    memset(&nus_init, 0, sizeof(nus_init));
+    memset(&its_init, 0, sizeof(its_init));
 
-    nus_init.data_handler = nus_data_handler;
+    its_init.data_handler = its_data_handler;
 
-    err_code = ble_nus_init(&m_nus, &nus_init);
+    err_code = ble_its_init(&m_its, &its_init);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -387,14 +387,14 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             uint16_t min_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.min_conn_interval;
 
             m_ble_params_info.con_interval = max_con_int;
-            ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
         } break;
         
         case BLE_GAP_EVT_PHY_UPDATE:
             m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
             m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
-            ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Phy update: %i, %i\r\n", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
             break;
         
@@ -471,7 +471,7 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
 {
     ble_conn_params_on_ble_evt(p_ble_evt);
     nrf_ble_gatt_on_ble_evt(&m_gatt, p_ble_evt);
-    ble_nus_on_ble_evt(&m_nus, p_ble_evt);
+    ble_its_on_ble_evt(&m_its, p_ble_evt);
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
     bsp_btn_ble_on_ble_evt(p_ble_evt);
@@ -543,10 +543,10 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, const nrf_ble_gatt_evt_t * p_evt)
 {
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
-        m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        m_ble_params_info.mtu = m_ble_nus_max_data_len;
-        ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
-        printf("Data len is set to 0x%X(%d), or maybe %i\r\n", m_ble_nus_max_data_len, m_ble_nus_max_data_len, p_evt->params.data_length);
+        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        m_ble_params_info.mtu = m_ble_its_max_data_len;
+        ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
+        printf("Data len is set to 0x%X(%d), or maybe %i\r\n", m_ble_its_max_data_len, m_ble_its_max_data_len, p_evt->params.data_length);
     }
     printf("ATT MTU exchange completed. central %i peripheral %i\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
 }
@@ -612,7 +612,7 @@ void bsp_event_handler(bsp_event_t event)
 /**@snippet [Handling the data received over UART] */
 void uart_event_handle(app_uart_evt_t * p_event)
 {
-    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
+    static uint8_t data_array[BLE_ITS_MAX_DATA_LEN];
     static uint8_t index = 0;
     uint32_t       err_code;
 
@@ -622,14 +622,14 @@ void uart_event_handle(app_uart_evt_t * p_event)
             UNUSED_VARIABLE(app_uart_get(&data_array[index]));
             index++;
 
-            if ((data_array[index - 1] == '\n') || (index >= (m_ble_nus_max_data_len)))
+            if ((data_array[index - 1] == '\n') || (index >= (m_ble_its_max_data_len)))
             {
                 NRF_LOG_DEBUG("Ready to send data over BLE NUS\r\n");
                 NRF_LOG_HEXDUMP_DEBUG(data_array, index);
 
                 do
                 {
-                    err_code = ble_nus_string_send(&m_nus, data_array, index);
+                    err_code = ble_its_string_send(&m_its, data_array, index);
                     if ( (err_code != NRF_ERROR_INVALID_STATE) && (err_code != NRF_ERROR_BUSY) )
                     {
                         APP_ERROR_CHECK(err_code);
@@ -803,7 +803,7 @@ int main(void)
         {
             case APP_CMD_SINGLE_CAPTURE:
                 m_new_command_received = APP_CMD_NOCOMMAND;
-                //ble_its_send_file(&m_nus, test_file, TEST_FILE_SIZE);
+                //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
                 printf("Starting capture...\r\n");
                 myCamera.startSingleCapture();
                 image_size = myCamera.bytesAvailable();
@@ -812,7 +812,7 @@ int main(void)
                 if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
                 {
                     printf("Readout finished!\r\n");
-                    ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+                    ble_its_send_file(&m_its, jpg_buf + 1, image_size - 1, m_ble_its_max_data_len);
                 }
                 break;
             
@@ -865,12 +865,12 @@ int main(void)
                 printf("Attempting to change phy.\r\n");
                 gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-                sd_ble_gap_phy_request(m_nus.conn_handle, &gap_phys_settings);            
+                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);            
                 break;
             
             case APP_CMD_SEND_BLE_PARAMS:
                 m_new_command_received = APP_CMD_NOCOMMAND;
-                ble_its_ble_params_info_send(&m_nus, &m_ble_params_info);
+                ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
                 break;
             
             default:
@@ -886,7 +886,7 @@ int main(void)
                 image_size = myCamera.bytesAvailable();
                 if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
                 {
-                    ble_its_send_file(&m_nus, jpg_buf + 1, image_size - 1, m_ble_nus_max_data_len);
+                    ble_its_send_file(&m_its, jpg_buf + 1, image_size - 1, m_ble_its_max_data_len);
                 }
             }
         }

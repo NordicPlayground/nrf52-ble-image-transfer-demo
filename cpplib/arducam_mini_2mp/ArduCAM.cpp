@@ -123,7 +123,6 @@ void ArduCAM::set_bit(uint8_t addr, uint8_t bit)
   uint8_t temp;
   temp = read_reg(addr);
   write_reg(addr, temp | bit);
-
 }
 
 //Clear corresponding bit
@@ -218,7 +217,7 @@ ArduCAM::ArduCAM(uint8_t model)
     switch (sensor_model)
     {
         case OV2640:
-            mTwiMaster.address = 0x60>>1;
+            mTwiMaster.address = 0x60 >> 1;
             break;
         default:
             mTwiMaster.address = 0x42;
@@ -343,7 +342,6 @@ uint8_t ArduCAM::rdSensorReg8_16(uint8_t regID, uint16_t* regDat)
     mTwiMaster.txRx(&regID, 1, rxBuf, 2);
     mTwiMaster.completeOperation();
     *regDat = rxBuf[0] << 8 | rxBuf[1];
-
     nrf_delay_ms(1);
     return (1);
 }
