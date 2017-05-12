@@ -7,6 +7,9 @@ The resolution can be changed in 6 steps between 160x120 to 1600x1200, and an es
 
 The example is set up to request different BLE phy's, and can be used to demonstrate the difference between 1Mbps and 2Mbps BLE modes on phones that support it. 
 
+The Android companion app can be found here:
+[https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo](https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo)
+
 Requirements
 ------------
 - nRF5 SDK version 13.0.0
@@ -18,7 +21,7 @@ TODO
 ----
 - Add support for the nRF52832 and future boards in the nRF52 family
 - Update IAR and GCC project/make files
-- Remove dependency on external C++ libraries
+- Create a proper setup guide for configuring the hardware, on the 52840 and 52832 kits
 
 Note
 ----
