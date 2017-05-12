@@ -2220,11 +2220,6 @@
               <FilePath>..\..\..\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
             </File>
             <File>
-              <FileName>app_display.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\arducam_mini_2mp\app_display.cpp</FilePath>
-            </File>
-            <File>
               <FileName>ArduCAM.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
@@ -2233,6 +2228,11 @@
               <FileName>cl_system.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\system\cl_system.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>ArducamMini2MP.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -4457,11 +4457,6 @@
               <FilePath>..\..\..\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
             </File>
             <File>
-              <FileName>app_display.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\arducam_mini_2mp\app_display.cpp</FilePath>
-            </File>
-            <File>
               <FileName>ArduCAM.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
@@ -4470,6 +4465,11 @@
               <FileName>cl_system.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\system\cl_system.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>ArducamMini2MP.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
             </File>
           </Files>
         </Group>

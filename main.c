@@ -69,7 +69,7 @@
 #include "cl_includes.h"
 #include "cl_system.h"
 #include "cl_hal_gpio.h"
-#include "app_display.h"
+#include "ArducamMini2MP.h"
 
 #define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"

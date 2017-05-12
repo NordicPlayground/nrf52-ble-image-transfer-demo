@@ -1031,8 +1031,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\app_display.cpp</PathWithFileName>
-      <FilenameWithoutPath>app_display.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</PathWithFileName>
+      <FilenameWithoutPath>ArduCAM.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1043,8 +1043,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</PathWithFileName>
-      <FilenameWithoutPath>ArduCAM.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\system\cl_system.cpp</PathWithFileName>
+      <FilenameWithoutPath>cl_system.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1055,8 +1055,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\cpplib\system\cl_system.cpp</PathWithFileName>
-      <FilenameWithoutPath>cl_system.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</PathWithFileName>
+      <FilenameWithoutPath>ArducamMini2MP.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
