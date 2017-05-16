@@ -2,7 +2,8 @@
 #include "system//cl_system.h"
 
 namespace CppLib {
-    
+
+#define FTPAN58_GPIOTE_CH 2
 SpiMaster *SpiMaster::mActiveClassList[CPPLIB_BOARD_SPIM_INTERFACE_NUM] = {0};
 
 SpiMaster::SpiMaster()
@@ -34,11 +35,15 @@ void SpiMaster::open()
         nrfSystem.registerGpio(mBase->PSEL.MOSI = pinMosi);
         nrfSystem.registerGpio(mBase->PSEL.MISO = pinMiso);
         mCsnPin.open(pinCsn);
-        mBase->FREQUENCY = frequency << SPIM_FREQUENCY_FREQUENCY_Pos;
-        mBase->CONFIG = clockPhase      << SPIM_CONFIG_CPHA_Pos |
-                        clockPolarity   << SPIM_CONFIG_CPOL_Pos | 
-                        bitOrder        << SPIM_CONFIG_ORDER_Pos;
-        mBase->INTENSET = SPIM_INTENSET_END_Msk;
+        pan58PPIChannel.open(&NRF_GPIOTE->EVENTS_IN[FTPAN58_GPIOTE_CH], &mBase->TASKS_STOP);
+        NRF_GPIOTE->CONFIG[FTPAN58_GPIOTE_CH] = (GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) | 
+                                                (mBase->PSEL.SCK << GPIOTE_CONFIG_PSEL_Pos) |
+                                                (GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos);
+        mBase->FREQUENCY = frequency     << SPIM_FREQUENCY_FREQUENCY_Pos;
+        mBase->CONFIG    = clockPhase    << SPIM_CONFIG_CPHA_Pos |
+                           clockPolarity << SPIM_CONFIG_CPOL_Pos | 
+                           bitOrder      << SPIM_CONFIG_ORDER_Pos;
+        mBase->INTENSET  = SPIM_INTENSET_END_Msk;
         mBase->EVENTS_END = 0;
         NVIC_SetPriority((IRQn_Type)cpplibResourceSpimIrqN[mSpimPeripheralIndex], 7);
         NVIC_EnableIRQ((IRQn_Type)cpplibResourceSpimIrqN[mSpimPeripheralIndex]);
@@ -76,6 +81,7 @@ void SpiMaster::transfer(uint8_t *txBuf, uint8_t *rxBuf, uint32_t length)
     }
     if(mOpen)
     {
+        if(length == 1) pan58PPIChannel.enable();
         while(mSpiActive) __WFE();
         mSpiActive = true;
         mBase->TXD.PTR      = (uint32_t)txBuf;
@@ -85,6 +91,7 @@ void SpiMaster::transfer(uint8_t *txBuf, uint8_t *rxBuf, uint32_t length)
         if(!mInPartialTrans) mCsnPin.low();
         mBase->TASKS_START  = 1;
         if(blocking) while(mSpiActive);
+        pan58PPIChannel.disable();
     }
     else nrfSystem.registerError(LS_ERROR, "SPIM: Transfer", 0, "Interface not open");
 }
@@ -121,6 +128,7 @@ void SpiMaster::receive(uint8_t *rxBuf, uint32_t rxLength)
     }   
     if(mOpen)
     {
+        if(rxLength == 1) pan58PPIChannel.enable();
         while(mSpiActive) __WFE();
         mSpiActive = true;
         mBase->TXD.PTR      = (uint32_t)&dummy;
@@ -130,6 +138,7 @@ void SpiMaster::receive(uint8_t *rxBuf, uint32_t rxLength)
         if(!mInPartialTrans) mCsnPin.low();
         mBase->TASKS_START  = 1;
         if(blocking) while(mSpiActive);
+        pan58PPIChannel.disable();
     }
     else nrfSystem.registerError(LS_ERROR, "SPIM: Receive", 0, "Interface not open");
 }
@@ -153,6 +162,7 @@ uint8_t SpiMaster::put(uint8_t dataOut)
     txByte = dataOut;
     if(mInPartialTrans)
     {
+        pan58PPIChannel.enable();
         while(mSpiActive);
         mSpiActive = true;
         mBase->TXD.PTR      = (uint32_t)&txByte;
@@ -161,6 +171,8 @@ uint8_t SpiMaster::put(uint8_t dataOut)
         mBase->RXD.MAXCNT   = 1;
         mBase->TASKS_START  = 1;
         while(mSpiActive);
+        pan58PPIChannel.disable();
+        
         return rxByte;
     }
     return 0;

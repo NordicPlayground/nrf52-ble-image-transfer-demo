@@ -99,14 +99,24 @@ void System::freeGpio(uint32_t gpioNum)
     mGpioMap[gpioNum / 32] &= ~(1 << (gpioNum % 32));
 }
         
-uint32_t System::allocPPIChannel(Event event, Task task)
+uint32_t System::allocPPIChannel(void)
 {
-    return 0;
+    for(int i = 0; i < 32; i++)
+    {
+        if((mResourceMapPPIChannel & (1 << i)) == 0 &&
+           (CPPLIB_BOARD_PPI_CONFIGURABLE_MASK & (1 << i)) != 0)
+        {
+            mResourceMapPPIChannel |= (1 << i);
+            return i;
+        }
+    }
+    return 0xFFFFFFFF;
 }
 
 void System::deallocPPIChannel(uint32_t ppiChannelNum)
 {
-    
+    NRF_PPI->CHENCLR = (1 << ppiChannelNum);
+    mResourceMapPPIChannel &= (1 << ppiChannelNum);
 }
 
 bool System::resourceMapCheckAndSet(uint32_t perNum)
@@ -282,7 +292,7 @@ void SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler(void)
 {
     if(System::mIrqCallbackSpim)
     {
-        System::mIrqCallbackSpim(1);
+        System::mIrqCallbackSpim(CPPLIB_INT_INDEX_SPIM0);
     }
     if(System::mIrqCallbackSpis)
     {
@@ -290,7 +300,7 @@ void SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler(void)
     }
     if(System::mIrqCallbackTwim)
     {
-        System::mIrqCallbackTwim(0);
+        System::mIrqCallbackTwim(CPPLIB_INT_INDEX_TWIM0);
     }
 }
 #endif
@@ -300,7 +310,7 @@ void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void)
 {
     if(System::mIrqCallbackSpim)
     {
-        System::mIrqCallbackSpim(2);
+        System::mIrqCallbackSpim(CPPLIB_INT_INDEX_SPIM1);
     }
     if(System::mIrqCallbackSpis)
     {
@@ -308,7 +318,7 @@ void SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler(void)
     }
     if(System::mIrqCallbackTwim)
     {
-        System::mIrqCallbackTwim(1);
+        System::mIrqCallbackTwim(CPPLIB_INT_INDEX_TWIM1);
     }    
 }
 #endif
@@ -318,7 +328,7 @@ void SPIM2_SPIS2_SPI2_IRQHandler(void)
 {
     if(System::mIrqCallbackSpim)
     {
-        System::mIrqCallbackSpim(0);
+        System::mIrqCallbackSpim(CPPLIB_INT_INDEX_SPIM2);
     }    
     if(System::mIrqCallbackSpis)
     {

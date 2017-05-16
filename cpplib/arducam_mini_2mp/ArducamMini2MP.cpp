@@ -59,7 +59,7 @@ void ArducamMini2MP::open()
         // put your setup code here, to run once:
     uint8_t vid, pid;
     uint8_t temp;
-    myCAM = new ArduCAM(OV2640);
+    myCAM = new ArduCAM(OV2640, pinScl, pinSda, pinCsn, pinMosi, pinMiso, pinSck);
 
     nrfSystem.registerError(LS_DEBUG, "ARDUCAM", 0, "Camera Start");
     

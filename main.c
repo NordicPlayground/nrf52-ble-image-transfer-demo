@@ -390,13 +390,15 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
         } break;
-        
+
+#if defined(S140)        
         case BLE_GAP_EVT_PHY_UPDATE:
             m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
             m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
             ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Phy update: %i, %i\r\n", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
             break;
+#endif
         
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
             // No system attributes have been stored.
@@ -739,6 +741,28 @@ static void log_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+static void camera_init(void)
+{
+#if defined(BOARD_PCA10056)
+    myCamera.pinScl = 13;
+    myCamera.pinSda = 15;
+    myCamera.pinSck = 21;
+    myCamera.pinMiso = 23;
+    myCamera.pinMosi = 25;
+    myCamera.pinCsn = 32 + 9;
+#elif defined(BOARD_PCA10040)
+    myCamera.pinScl = 27;
+    myCamera.pinSda = 26;
+    myCamera.pinSck = 25;
+    myCamera.pinMiso = 24;
+    myCamera.pinMosi = 23;
+    myCamera.pinCsn = 22;
+#else
+#error Board not defined or not supported
+#endif    
+    myCamera.open();
+    myCamera.setResolution(OV2640_320x240);
+}
 
 /**@brief Function for placing the application in low power state while waiting for events.
  */
@@ -754,7 +778,11 @@ void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, c
 }
 
 #define TEST_FILE_SIZE 2000
+#if defined(PCA_10056)
 #define IMAGE_MAX_SIZE 150000
+#else
+#define IMAGE_MAX_SIZE 20000//35500
+#endif
 uint8_t test_file[TEST_FILE_SIZE];
 
 uint8_t jpg_buf[IMAGE_MAX_SIZE];
@@ -778,26 +806,31 @@ int main(void)
     services_init();
     advertising_init();
     conn_params_init();
-
+    
     printf("\r\nUART Start!\r\n");
 
     nrfSystem.setLogHandler(cpplibLogFunction);
+    nrfSystem.setLogDefaultSeverity(LS_DEBUG);
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    data_len_ext_set(true);
-    
-    gatt_mtu_set(247);
+    camera_init();
 
-    myCamera.open();
-    myCamera.setResolution(OV2640_320x240);
-    
+    data_len_ext_set(true);
+
+#if defined(S140)
+    gatt_mtu_set(244);
+#endif
+
     // Enter main loop.
     for (;;)
     {
         uint32_t image_size;
+
+#if defined(S140)
         ble_gap_phys_t gap_phys_settings;    
-        
+#endif
+
         //power_manage();
         switch(m_new_command_received)
         {
@@ -862,10 +895,12 @@ int main(void)
                 
             case APP_CMD_CHANGE_PHY:   
                 m_new_command_received = APP_CMD_NOCOMMAND;
+#if defined(S140)
                 printf("Attempting to change phy.\r\n");
                 gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);            
+#endif
                 break;
             
             case APP_CMD_SEND_BLE_PARAMS:

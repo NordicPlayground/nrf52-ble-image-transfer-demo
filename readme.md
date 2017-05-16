@@ -7,7 +7,7 @@ The resolution can be changed in 6 steps between 160x120 to 1600x1200, and an es
 
 The example is set up to request different BLE phy's, and can be used to demonstrate the difference between 1Mbps and 2Mbps BLE modes on phones that support it. 
 
-The Android companion app can be found here:
+The Android companion app can be found here:     
 [https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo](https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo)
 
 Requirements
@@ -36,6 +36,6 @@ This application is one of several applications that has been built by the suppo
 
 However, in the hope that it still may be useful also for others than the ones we initially wrote it for, we've chosen to distribute it here on GitHub. 
 
-The application is built to be used with the official nRF51 SDK, that can be downloaded from developer.nordicsemi.com
+The application is built to be used with the official nRF5 SDK, that can be downloaded from developer.nordicsemi.com
 
-Please post any questions about this project on https://devzone.nordicsemi.com.
+Please post any questions about this project on [https://devzone.nordicsemi.com](https://devzone.nordicsemi.com)

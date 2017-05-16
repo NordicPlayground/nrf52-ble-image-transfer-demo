@@ -203,15 +203,14 @@ uint8_t ArduCAM::read_reg(uint8_t addr)
   return data;
 }
 
-ArduCAM::ArduCAM()
-{
-    sensor_model = OV7670;
-    sensor_addr = 0x42;
-    spiTwiInit();
-}
-
-ArduCAM::ArduCAM(uint8_t model)
-{    
+ArduCAM::ArduCAM(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck)
+{ 
+    pinScl = scl;
+    pinSda = sda;
+    pinCsn = csn;
+    pinMosi = mosi;
+    pinMiso = miso;
+    pinSck = sck;    
     spiTwiInit();
     sensor_model = model;
     switch (sensor_model)
@@ -227,16 +226,16 @@ ArduCAM::ArduCAM(uint8_t model)
 
 void ArduCAM::spiTwiInit()
 {
-    mSpiMaster.pinCsn       = 32 + 9;
-    mSpiMaster.pinMosi      = 25;
-    mSpiMaster.pinMiso      = 23;
-    mSpiMaster.pinSck       = 21;
+    mSpiMaster.pinCsn       = pinCsn;
+    mSpiMaster.pinMosi      = pinMosi;
+    mSpiMaster.pinMiso      = pinMiso;
+    mSpiMaster.pinSck       = pinSck;
     mSpiMaster.frequency    = SPIM_FREQUENCY_FREQUENCY_M4;
     mSpiMaster.blocking     = false;
     mSpiMaster.open();    
     mSpiMaster.close();
-    mTwiMaster.pinSda       = 15;
-    mTwiMaster.pinScl       = 13;
+    mTwiMaster.pinSda       = pinSda;
+    mTwiMaster.pinScl       = pinScl;
     mTwiMaster.open();    
 }
 

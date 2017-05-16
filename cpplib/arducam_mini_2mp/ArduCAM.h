@@ -340,9 +340,8 @@ struct sensor_reg {
 
 class ArduCAM
 {
-	public:
-		ArduCAM();
-		ArduCAM(uint8_t model);
+	public:    
+		ArduCAM(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck);
 		void InitCAM();
 		
         void spiEnable(bool spiEnable);
@@ -397,7 +396,8 @@ class ArduCAM
     
 		int bus_write(int address, int value);
 		uint8_t bus_read(int address);	
-	protected:
+        
+	protected:    
 		regtype *P_CS;
 		regsize B_CS;
   		uint8_t m_fmt;
@@ -408,6 +408,14 @@ class ArduCAM
     
         CppLib::SpiMaster mSpiMaster;
         CppLib::TwiMaster mTwiMaster;
+    
+    private:
+        uint32_t pinCsn;
+        uint32_t pinMosi;
+        uint32_t pinMiso;
+        uint32_t pinSck;
+        uint32_t pinSda;
+        uint32_t pinScl;
 };
 
 #if defined OV7660_CAM	

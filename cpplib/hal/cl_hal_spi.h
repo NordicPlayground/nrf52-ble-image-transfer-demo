@@ -1,10 +1,11 @@
-#ifndef __ULIB_SPIM_H
-#define __ULIB_SPIM_H
+#ifndef __CPPLIB_SPIM_H
+#define __CPPLIB_SPIM_H
 
 #include <stdint.h>
 #include "nrf.h"
 #include "boards//cl_board.h"
 #include "hal//cl_hal_gpio.h"
+#include "hal//cl_hal_ppi.h"
 
 namespace CppLib {
 
@@ -25,6 +26,7 @@ private:
     volatile bool mSpiActive;
     volatile bool mInPartialTrans;
     PinOut mCsnPin;
+    PPIChannel pan58PPIChannel;
     SpiCallbackT mCallback;
 
     static SpiMaster *mActiveClassList[CPPLIB_BOARD_SPIM_INTERFACE_NUM];

@@ -1,5 +1,5 @@
-#ifndef __ULIB_UART_H
-#define __ULIB_UART_H
+#ifndef __CPPLIB_UART_H
+#define __CPPLIB_UART_H
 
 #include <stdint.h>
 #include "nrf.h"
@@ -51,6 +51,7 @@ public:
     Uart &put(uint8_t valueByte);
     Uart &put(const char *string);
     Uart &put(uint8_t *valueBuf, uint32_t bufLength);
+    Uart &put(uint32_t valueInt);
     Uart &put(float valueFloat);
     Uart &newline() { return put("\r\n"); }
     uint8_t get();

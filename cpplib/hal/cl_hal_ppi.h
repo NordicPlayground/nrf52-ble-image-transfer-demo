@@ -1,5 +1,5 @@
-#ifndef __ULIB_PPI_H
-#define __ULIB_PPI_H
+#ifndef __CPPLIB_PPI_H
+#define __CPPLIB_PPI_H
 
 #include "system//cl_system.h"
 
@@ -36,10 +36,19 @@ public:
     void activate(){ *mBaseRegister = 1; }
 };
     
-class PPI
+class PPIChannel
 {
+    uint32_t mIndex;
+    
+    bool validIndex();
+    
 public:
-    void open(Event &event, Task &task);
+    PPIChannel(void);
+    void open();
+    void open(volatile uint32_t *event, volatile uint32_t *task);
+    void assign(volatile uint32_t *event, volatile uint32_t *task);
+    void enable();
+    void disable();
     void close();
 };
 

@@ -85,7 +85,7 @@ public:
     
     static void sdkLogMessageHandler(LogSeverity severity, char *module, uint32_t errorCode, char *message);
     
-    uint32_t allocPPIChannel(Event event, Task task);
+    uint32_t allocPPIChannel(void);
     void deallocPPIChannel(uint32_t ppiChannelNum);
 
     NRF_UARTE_Type *allocUartE(uint32_t *uartIndex);

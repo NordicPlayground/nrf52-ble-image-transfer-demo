@@ -23,7 +23,11 @@ void Pin::open(uint32_t pinNum)
 {
     mPinNum = pinNum; 
     mPinNumMask = 1 << (pinNum % 32); 
+#if(CPPLIB_BOARD_GPIO_NUM > 32)
     mGpioPort = (pinNum >= 32 ? NRF_P1 : NRF_P0);
+#else
+    mGpioPort = NRF_P0;
+#endif
     nrfSystem.registerGpio(pinNum);    
 }
 

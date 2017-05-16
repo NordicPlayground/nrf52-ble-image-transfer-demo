@@ -1,11 +1,14 @@
 #include "hal//cl_hal_uart.h"
 #include "boards//cl_board.h"
 #include "system//cl_system.h"
+#include <stdio.h>
 
 namespace CppLib {
     
 Uart *Uart::mActiveClassList[CPPLIB_BOARD_UART_INTERFACE_NUM] = {0};
 Uart *Uart::mLogUart = 0;
+
+static char convert_str_buf[16];
 
 Uart::Uart()
 {
@@ -15,14 +18,18 @@ Uart::Uart()
     pinTx  = CPPLIB_BOARD_UART_PIN_TX;
     pinRts = CPPLIB_BOARD_UART_PIN_RTS;
     pinCts = CPPLIB_BOARD_UART_PIN_CTS;
-    baudrate = 9600;
+    baudrate = 115200;
     parity = false;
     flowControl = false;
 }
 
 void Uart::open()
 {
-    if((mBase = nrfSystem.allocUartE(&mUartPeripheralIndex)) != 0)
+    if(mOpen)
+    {
+        nrfSystem.registerError(LS_ERROR, "UART: Open", 0, "Interface already open");
+    }
+    else if((mBase = nrfSystem.allocUartE(&mUartPeripheralIndex)) != 0)
     {
         mOpen = true;
         nrfSystem.registerUartIrq(Uart::onIrq);
@@ -39,20 +46,20 @@ void Uart::open()
         mBase->RXD.PTR = (uint32_t)&mTmpRxBuf;
         mBase->RXD.MAXCNT = 1;
         mBase->INTENSET = UARTE_INTENSET_ENDTX_Msk | UARTE_INTENSET_ENDRX_Msk;
-        NVIC_SetPriority((IRQn_Type)ulibResourceUarteIrqN[mUartPeripheralIndex], 6);
-        NVIC_EnableIRQ((IRQn_Type)ulibResourceUarteIrqN[mUartPeripheralIndex]);
+        NVIC_SetPriority((IRQn_Type)cpplibResourceUarteIrqN[mUartPeripheralIndex], 6);
+        NVIC_EnableIRQ((IRQn_Type)cpplibResourceUarteIrqN[mUartPeripheralIndex]);
         mBase->ENABLE = UARTE_ENABLE_ENABLE_Enabled << UARTE_ENABLE_ENABLE_Pos;
         mBase->TASKS_STARTRX = 1;
-        nrfSystem.registerError(DEBUG, "UART", 0, "Uart Opened");
+        nrfSystem.registerError(LS_DEBUG, "UART", 0, "Uart Opened");
     }
-    else nrfSystem.registerError(ERROR, "UART: Open", 0, "No peripheral free");
+    else nrfSystem.registerError(LS_ERROR, "UART: Open", 0, "No peripheral free");
 }
 
 void Uart::close()
 {
     if(mOpen)
     {
-        NVIC_DisableIRQ((IRQn_Type)ulibResourceUarteIrqN[mUartPeripheralIndex]);
+        NVIC_DisableIRQ((IRQn_Type)cpplibResourceUarteIrqN[mUartPeripheralIndex]);
         nrfSystem.deallocUartE(mBase);
         mActiveClassList[mUartPeripheralIndex] = 0;
         nrfSystem.freeGpio(mBase->PSEL.TXD);
@@ -64,7 +71,7 @@ void Uart::close()
         }
         mOpen = false;
     }
-    nrfSystem.registerError(ERROR, "SPIM: Close", 0, "Interface not open");    
+    nrfSystem.registerError(LS_ERROR, "SPIM: Close", 0, "Interface not open");    
 }
 
 void Uart::initiateTx()
@@ -107,8 +114,17 @@ Uart &Uart::put(uint8_t *valueBuf, uint32_t bufLength)
     return *this;
 }
 
+Uart &Uart::put(uint32_t valueInt)
+{
+    sprintf(convert_str_buf, "%i", (int)valueInt);
+    put(convert_str_buf);
+    return *this;
+}
+
 Uart &Uart::put(float valueFloat)
 {
+    sprintf(convert_str_buf, "%.2f", valueFloat);
+    put(convert_str_buf);
     return *this;
 }
 
@@ -153,9 +169,9 @@ LogMessageHandler Uart::getDefaultLogHandler()
     return uartLogHandler;
 }
 
-void Uart::uartLogHandler(ulibLogSeverity severity, char *module, uint32_t errorCode, char *message)
+void Uart::uartLogHandler(LogSeverity severity, char *module, uint32_t errorCode, char *message)
 {
-    mLogUart->put("\r\nLOG OUT - ").put(ulibLogSeverityStrings[severity]).put(": ").put(module).put(": ").put(message).put("\r\n");
+    mLogUart->put("\r\nLog: ").put(cpplibLogSeverityStrings[severity]).put(": ").put(module).put(": ").put(message).put("\r\n");
 }
 
 } // End of namespace CppLib

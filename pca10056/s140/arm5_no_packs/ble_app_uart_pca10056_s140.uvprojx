@@ -2234,6 +2234,11 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
             </File>
+            <File>
+              <FileName>cl_hal_ppi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\cpplib\hal\cl_hal_ppi.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4470,6 +4475,11 @@
               <FileName>ArducamMini2MP.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>cl_hal_ppi.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\cpplib\hal\cl_hal_ppi.cpp</FilePath>
             </File>
           </Files>
         </Group>
