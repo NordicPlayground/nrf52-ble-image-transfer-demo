@@ -13,13 +13,23 @@ The Android companion app can be found here:
 Requirements
 ------------
 - nRF5 SDK version 13.0.0
-- nRF52840 DK (PCA10056)
+- nRF52 DK (PCA10040) or nRF52840 DK (PCA10056)
 - Arducam Mini 2MP camera module (OV2640)
 	- [https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY](https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY "Amazon link")
 
+SoftDevice version
+------------------
+
+For the nRF52840 it is sufficient to use S140 v5.0.0-2.alpha, provided with SDK 13. 
+
+For the nRF52832 it is necessary to download S132 v5.0.0-3.alpha from [https://www.nordicsemi.com/eng/nordic/download_resource/58987/7/11392435/116068](here), and extract it to the following folder: 
+*\nRF5_SDK_13.0.0\components\softdevice\s132_v5_alpha*
+
+The header files should be located here: *\nRF5_SDK_13.0.0\components\softdevice\s132_v5_alpha\headers\\*
+
+
 TODO
 ----
-- Add support for the nRF52832 and future boards in the nRF52 family
 - Update IAR and GCC project/make files
 - Create a proper setup guide for configuring the hardware, on the 52840 and 52832 kits
 

@@ -390,15 +390,13 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
             ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
         } break;
-
-#if defined(S140)        
+       
         case BLE_GAP_EVT_PHY_UPDATE:
             m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
             m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
             ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             printf("Phy update: %i, %i\r\n", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
             break;
-#endif
         
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
             // No system attributes have been stored.
@@ -494,7 +492,11 @@ static void ble_stack_init(void)
     clock_lf_cfg.source        = NRF_CLOCK_LF_SRC_XTAL;
     clock_lf_cfg.rc_ctiv       = 0;
     clock_lf_cfg.rc_temp_ctiv  = 0;
+#ifdef S140
     clock_lf_cfg.xtal_accuracy = NRF_CLOCK_LF_XTAL_ACCURACY_20_PPM;
+#else
+    clock_lf_cfg.accuracy = NRF_CLOCK_LF_ACCURACY_20_PPM;
+#endif
 
     // Initialize SoftDevice.
     SOFTDEVICE_HANDLER_INIT(&clock_lf_cfg, NULL);
@@ -813,18 +815,13 @@ int main(void)
 
     data_len_ext_set(true);
 
-#if defined(S140)
-    gatt_mtu_set(244);
-#endif
+    gatt_mtu_set(247);
 
     // Enter main loop.
     for (;;)
     {
         uint32_t image_size;
-
-#if defined(S140)
         ble_gap_phys_t gap_phys_settings;    
-#endif
 
         switch(m_new_command_received)
         {
@@ -892,11 +889,14 @@ int main(void)
                 
             case APP_CMD_CHANGE_PHY:   
                 m_new_command_received = APP_CMD_NOCOMMAND;
-#if defined(S140)
+            
                 printf("Attempting to change phy.\r\n");
                 gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);            
+#ifdef S140            
+                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);   
+#else            
+                sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
 #endif
                 break;
             
