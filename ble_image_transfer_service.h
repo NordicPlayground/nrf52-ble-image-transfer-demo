@@ -171,7 +171,11 @@ uint32_t ble_its_string_send(ble_its_t * p_its, uint8_t * p_string, uint16_t len
 
 uint32_t ble_its_ble_params_info_send(ble_its_t * p_its, ble_its_ble_params_info_t * ble_params_info);
 
+uint32_t ble_its_img_info_send(ble_its_t * p_its, ble_its_img_info_t * img_info);
+
 uint32_t ble_its_send_file(ble_its_t * p_its, uint8_t * p_data, uint32_t data_length, uint32_t max_packet_length);
+
+uint32_t ble_its_send_file_fragment(ble_its_t * p_its, uint8_t * p_data, uint32_t data_length);
 
 bool ble_its_file_transfer_busy(void);
 

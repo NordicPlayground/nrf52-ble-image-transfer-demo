@@ -764,6 +764,7 @@ static void camera_init(void)
     myCamera.setResolution(OV2640_320x240);
 }
 
+
 /**@brief Function for placing the application in low power state while waiting for events.
  */
 static void power_manage(void)
@@ -772,26 +773,20 @@ static void power_manage(void)
     APP_ERROR_CHECK(err_code);
 }
 
+
 void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, char *message)
 {
     printf("%s - %s\r\n", module, message);
 }
 
-#define TEST_FILE_SIZE 2000
-#if defined(PCA_10056)
-#define IMAGE_MAX_SIZE 150000
-#else
-#define IMAGE_MAX_SIZE 20000//35500
-#endif
-uint8_t test_file[TEST_FILE_SIZE];
-
-uint8_t jpg_buf[IMAGE_MAX_SIZE];
 
 /**@brief Application main function.
  */
 int main(void)
 {
     uint32_t err_code;
+    uint32_t img_data_length = 0;
+    uint8_t img_data_buffer[255];
 
     // Initialize.
     err_code = app_timer_init();
@@ -831,21 +826,23 @@ int main(void)
         ble_gap_phys_t gap_phys_settings;    
 #endif
 
-        //power_manage();
         switch(m_new_command_received)
         {
             case APP_CMD_SINGLE_CAPTURE:
                 m_new_command_received = APP_CMD_NOCOMMAND;
                 //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
-                printf("Starting capture...\r\n");
-                myCamera.startSingleCapture();
-                image_size = myCamera.bytesAvailable();
-                printf("Capture complete: size %i bytes\r\n", (int)(image_size));
-                
-                if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
+                if(myCamera.bytesAvailable() == 0)
                 {
-                    printf("Readout finished!\r\n");
-                    ble_its_send_file(&m_its, jpg_buf + 1, image_size - 1, m_ble_its_max_data_len);
+                    printf("Starting capture...\r\n");
+                    myCamera.startSingleCapture();
+                    image_size = myCamera.bytesAvailable();
+                    printf("Capture complete: size %i bytes\r\n", (int)(image_size));
+                    ble_its_img_info_t image_info;
+                    image_info.file_size_bytes = image_size - 1;
+                    ble_its_img_info_send(&m_its, &image_info);
+                    
+                    // Flush the first byte (or the JPG image will be corrupted)
+                    myCamera.fillBuffer(img_data_buffer, 1);
                 }
                 break;
             
@@ -914,16 +911,36 @@ int main(void)
         
         if(m_stream_mode_active)
         {
-            while(ble_its_file_transfer_busy());
-            if(m_stream_mode_active)
+            if(img_data_length == 0 && myCamera.bytesAvailable() == 0)
             {
                 myCamera.startSingleCapture();
+
                 image_size = myCamera.bytesAvailable();
-                if(myCamera.fillBuffer(jpg_buf, IMAGE_MAX_SIZE) < IMAGE_MAX_SIZE)
-                {
-                    ble_its_send_file(&m_its, jpg_buf + 1, image_size - 1, m_ble_its_max_data_len);
-                }
+                
+                ble_its_img_info_t image_info;
+                image_info.file_size_bytes = image_size - 1;
+                ble_its_img_info_send(&m_its, &image_info);
+                
+                // Flush the first byte (or the JPG image will be corrupted)
+                myCamera.fillBuffer(img_data_buffer, 1);
             }
+        }
+        
+        if(img_data_length > 0 || myCamera.bytesAvailable() > 0)
+        {
+            if(img_data_length == 0)
+            {
+                img_data_length = myCamera.fillBuffer(img_data_buffer, m_ble_its_max_data_len);
+            }
+            if(ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length) == NRF_SUCCESS)
+            {
+                img_data_length = 0;
+            }                
+        }
+        
+        if(m_new_command_received == APP_CMD_NOCOMMAND)
+        {
+            power_manage();
         }
     }
 }

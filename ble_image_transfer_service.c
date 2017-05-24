@@ -536,6 +536,26 @@ uint32_t ble_its_send_file(ble_its_t * p_its, uint8_t * p_data, uint32_t data_le
     return err_code;
 }
 
+
+uint32_t ble_its_send_file_fragment(ble_its_t * p_its, uint8_t * p_data, uint32_t data_length)
+{
+    uint32_t err_code; 
+    
+    if ((p_its->conn_handle == BLE_CONN_HANDLE_INVALID) || (!p_its->is_notification_enabled))
+    {
+        return NRF_ERROR_INVALID_STATE;
+    } 
+    
+    if(file_size != 0)
+    {
+        return NRF_ERROR_BUSY;
+    }
+    
+    err_code = ble_its_string_send(p_its, p_data, data_length);           
+    return err_code;
+}
+
+
 bool ble_its_file_transfer_busy(void)
 {
     return file_size != 0;
