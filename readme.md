@@ -22,7 +22,7 @@ SoftDevice version
 
 For the nRF52840 it is sufficient to use S140 v5.0.0-2.alpha, provided with SDK 13. 
 
-For the nRF52832 it is necessary to download S132 v5.0.0-3.alpha from [https://www.nordicsemi.com/eng/nordic/download_resource/58987/7/11392435/116068](here), and extract it to the following folder: 
+For the nRF52832 it is necessary to download S132 v5.0.0-3.alpha [here](https://www.nordicsemi.com/eng/nordic/download_resource/58987/7/11392435/116068), and extract it to the following folder: 
 *\nRF5_SDK_13.0.0\components\softdevice\s132_v5_alpha*
 
 The header files should be located here: *\nRF5_SDK_13.0.0\components\softdevice\s132_v5_alpha\headers\\*
@@ -48,4 +48,4 @@ However, in the hope that it still may be useful also for others than the ones w
 
 The application is built to be used with the official nRF5 SDK, that can be downloaded from developer.nordicsemi.com
 
-Please post any questions about this project on [https://devzone.nordicsemi.com](https://devzone.nordicsemi.com)
+Please post any questions about this project on [devzone](https://devzone.nordicsemi.com)
