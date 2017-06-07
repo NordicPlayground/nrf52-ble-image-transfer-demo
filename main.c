@@ -75,17 +75,19 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 
+#define PCA10056_USE_FRONT_HEADER				1																						/**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
+
 #define CONN_CFG_TAG                    1                                           /**< A tag that refers to the BLE stack configuration we set with @ref sd_ble_cfg_set. Default tag is @ref BLE_CONN_CFG_TAG_DEFAULT. */
 
 #define APP_FEATURE_NOT_SUPPORTED       BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2        /**< Reply when unsupported features are requested. */
 
-#define DEVICE_NAME                     "Nordic_IMAGE"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Nordic_IMAGE"                              /**< Name of device. Will be included in the advertising data. */
 #define ITS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)              /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(12, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
@@ -746,12 +748,21 @@ static void log_init(void)
 static void camera_init(void)
 {
 #if defined(BOARD_PCA10056)
-    myCamera.pinScl = 13;
-    myCamera.pinSda = 15;
-    myCamera.pinSck = 21;
-    myCamera.pinMiso = 23;
-    myCamera.pinMosi = 25;
-    myCamera.pinCsn = 32 + 9;
+	#if(PCA10056_USE_FRONT_HEADER == 1)
+			myCamera.pinScl = 13;
+			myCamera.pinSda = 15;
+			myCamera.pinSck = 21;
+			myCamera.pinMiso = 23;
+			myCamera.pinMosi = 25;
+			myCamera.pinCsn = 32 + 9;
+	#else
+			myCamera.pinScl = 27;
+			myCamera.pinSda = 26;
+			myCamera.pinSck = 32 + 15;
+			myCamera.pinMiso = 32 + 14;
+			myCamera.pinMosi = 32 + 13;
+			myCamera.pinCsn = 32 + 12;
+	#endif
 #elif defined(BOARD_PCA10040)
     myCamera.pinScl = 27;
     myCamera.pinSda = 26;
