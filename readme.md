@@ -20,16 +20,16 @@ Requirements
 Hardware setup
 --------------
 
-# nRF52840 using front connector
+### nRF52840 using front connector
 <img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_front2.jpg" width="600">
 
 Note: This requires solder bridges SB10-15 and SB20-25 to be soldered/cut, as illustrated here:
 <img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/grav_sb.PNG" width="300">
 
-# nRF52840 using side connector
+### nRF52840 using side connector
 <img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_side.jpg" width="600">
 
-# nRF52832 using side connector
+### nRF52832 using side connector
 <img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/832_with_cam.jpg" width="600">
 
 SoftDevice version
