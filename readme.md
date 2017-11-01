@@ -8,7 +8,7 @@ The resolution can be changed in 6 steps between 160x120 to 1600x1200, and an es
 The example is set up to request different BLE phy's, and can be used to demonstrate the difference between 1Mbps and 2Mbps BLE modes on phones that support it. 
 
 The Android companion app can be found here:     
-[https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo](https://github.com/NordicSemiconductor/Android-Image-Transfer-Demo)
+[https://github.com/NordicPlayground/Android-Image-Transfer-Demo](https://github.com/NordicPlayground/Android-Image-Transfer-Demo)
 
 Requirements
 ------------
@@ -21,16 +21,16 @@ Hardware setup
 --------------
 
 ### nRF52840 using front connector
-<img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_front2.jpg" width="600">
+<img src="https://github.com/NordicPlayground/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_front2.jpg" width="600">
 
 Note: This requires solder bridges SB10-15 and SB20-25 to be soldered/cut, as illustrated here:
-<img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/grav_sb.PNG" width="300">
+<img src="https://github.com/NordicPlayground/nrf52-ble-image-transfer-demo/blob/master/pics/grav_sb.PNG" width="300">
 
 ### nRF52840 using side connector
-<img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_side.jpg" width="600">
+<img src="https://github.com/NordicPlayground/nrf52-ble-image-transfer-demo/blob/master/pics/840_cam_side.jpg" width="600">
 
 ### nRF52832 using side connector
-<img src="https://github.com/NordicSemiconductor/nrf52-ble-image-transfer-demo/blob/master/pics/832_with_cam.jpg" width="600">
+<img src="https://github.com/NordicPlayground/nrf52-ble-image-transfer-demo/blob/master/pics/832_with_cam.jpg" width="600">
 
 SoftDevice version
 ------------------
