@@ -27,7 +27,7 @@
       </TargetDriverDllRegistry>
     </TargetOption>
   </Target>  <Target>
-    <TargetName>flash_s132_nrf52_4.0.2_softdevice</TargetName>
+    <TargetName>flash_s132_nrf52_6.0.0_softdevice</TargetName>
     <ToolsetNumber>0x4</ToolsetNumber>
     <ToolsetName>ARM-ADS</ToolsetName>
     <TargetOption>      <DebugOpt>
