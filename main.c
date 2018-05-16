@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2014 - 2018, Nordic Semiconductor ASA
  * 
  * All rights reserved.
  * 
@@ -41,12 +41,13 @@
  *
  * @defgroup ble_sdk_uart_over_ble_main main.c
  * @{
- * @ingroup  ble_sdk_app_its_eval
+ * @ingroup  ble_sdk_app_nus_eval
  * @brief    UART over BLE application main file.
  *
  * This file contains the source code for a sample application that uses the Nordic UART service.
  * This application uses the @ref srvlib_conn_params module.
  */
+
 
 #include <stdint.h>
 #include <string.h>
@@ -56,39 +57,42 @@
 #include "ble_advdata.h"
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
-#include "softdevice_handler.h"
+#include "nrf_sdh.h"
+#include "nrf_sdh_soc.h"
+#include "nrf_sdh_ble.h"
 #include "nrf_ble_gatt.h"
+#include "nrf_ble_qwr.h"
 #include "app_timer.h"
-#include "app_button.h"
+#include "ble_nus.h"
 #include "app_uart.h"
 #include "app_util_platform.h"
-#include "bsp.h"
 #include "bsp_btn_ble.h"
-#include "ble_image_transfer_service.h"
+#include "nrf_pwr_mgmt.h"
 
-#include "cl_includes.h"
-#include "cl_system.h"
-#include "cl_hal_gpio.h"
-#include "ArducamMini2MP.h"
+#if defined (UART_PRESENT)
+#include "nrf_uart.h"
+#endif
+#if defined (UARTE_PRESENT)
+#include "nrf_uarte.h"
+#endif
 
-#define NRF_LOG_MODULE_NAME "APP"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
-#define PCA10056_USE_FRONT_HEADER				1																						/**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
+#define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define CONN_CFG_TAG                    1                                           /**< A tag that refers to the BLE stack configuration we set with @ref sd_ble_cfg_set. Default tag is @ref BLE_CONN_CFG_TAG_DEFAULT. */
+#define DEVICE_NAME                     "Nordic_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
-#define APP_FEATURE_NOT_SUPPORTED       BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2        /**< Reply when unsupported features are requested. */
-
-#define DEVICE_NAME                     "Nordic_IMAGE"                              /**< Name of device. Will be included in the advertising data. */
-#define ITS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
+#define APP_BLE_OBSERVER_PRIO           3                                           /**< Application's BLE observer priority. You shouldn't need to modify this value. */
 
 #define APP_ADV_INTERVAL                64                                          /**< The advertising interval (in units of 0.625 ms. This value corresponds to 40 ms). */
-#define APP_ADV_TIMEOUT_IN_SECONDS      180                                         /**< The advertising timeout (in units of seconds). */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)              /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(12, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
+
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
@@ -100,27 +104,19 @@
 #define UART_TX_BUF_SIZE                256                                         /**< UART TX buffer size. */
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
-static ble_its_t                        m_its;                                      /**< Structure to identify the Nordic UART Service. */
-static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 
-static nrf_ble_gatt_t                   m_gatt;                                     /**< GATT module instance. */
-static ble_uuid_t                       m_adv_uuids[] = {{BLE_UUID_ITS_SERVICE, ITS_SERVICE_UUID_TYPE}};  /**< Universally unique service identifier. */
-static uint16_t                         m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
+NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
+NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
+BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
 
-static uint8_t                          m_new_command_received = 0;
-static uint8_t                          m_new_resolution, m_new_phy;
+static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
+static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+static ble_uuid_t m_adv_uuids[]          =                                          /**< Universally unique service identifier. */
+{
+    {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
+};
 
-static bool                             m_stream_mode_active = false;
-
-static ble_its_ble_params_info_t        m_ble_params_info = {20, 50, 1, 1};
-
-using namespace CppLib;
-
-ArducamMini2MP myCamera;
-Button button1(BUTTON_1, true);
-
-enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, 
-      APP_CMD_CHANGE_RESOLUTION, APP_CMD_CHANGE_PHY, APP_CMD_SEND_BLE_PARAMS};
 
 /**@brief Function for assert macro callback.
  *
@@ -138,6 +134,13 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
+/**@brief Function for initializing the timer module.
+ */
+static void timers_init(void)
+{
+    ret_code_t err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
+}
 
 /**@brief Function for the GAP initialization.
  *
@@ -169,51 +172,55 @@ static void gap_params_init(void)
 }
 
 
+/**@brief Function for handling Queued Write Module errors.
+ *
+ * @details A pointer to this function will be passed to each service which may need to inform the
+ *          application about an error.
+ *
+ * @param[in]   nrf_error   Error code containing information about what went wrong.
+ */
+static void nrf_qwr_error_handler(uint32_t nrf_error)
+{
+    APP_ERROR_HANDLER(nrf_error);
+}
+
+
 /**@brief Function for handling the data from the Nordic UART Service.
  *
  * @details This function will process the data received from the Nordic UART BLE Service and send
  *          it to the UART module.
  *
- * @param[in] p_its    Nordic UART Service structure.
- * @param[in] p_data   Data to be send to UART module.
- * @param[in] length   Length of the data.
+ * @param[in] p_evt       Nordic UART Service event.
  */
 /**@snippet [Handling the data received over BLE] */
-static void its_data_handler(ble_its_t * p_its, uint8_t * p_data, uint16_t length)
+static void nus_data_handler(ble_nus_evt_t * p_evt)
 {
-   
-    switch(p_data[0])
-    {
-        // Take picture
-        case APP_CMD_SINGLE_CAPTURE:
-        case APP_CMD_SEND_BLE_PARAMS:
-            m_new_command_received = p_data[0];
-            break;
-        
-        case APP_CMD_START_STREAM:
-            m_stream_mode_active = true;
-            m_new_command_received = p_data[0];
-            break;
 
-        case APP_CMD_STOP_STREAM:
-            m_stream_mode_active = false;
-            m_new_command_received = p_data[0];
-            break;
-        
-        case APP_CMD_CHANGE_RESOLUTION:
-            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
-            m_new_resolution = p_data[1];
-            break;
-        
-        case APP_CMD_CHANGE_PHY:
-            m_new_command_received = APP_CMD_CHANGE_PHY;
-            m_new_phy = p_data[1];
-            break;
-        
-        default: 
-            printf("Unknown command!!\r\n");
-            break;
+    if (p_evt->type == BLE_NUS_EVT_RX_DATA)
+    {
+        uint32_t err_code;
+
+        NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on UART.");
+        NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
+
+        for (uint32_t i = 0; i < p_evt->params.rx_data.length; i++)
+        {
+            do
+            {
+                err_code = app_uart_put(p_evt->params.rx_data.p_data[i]);
+                if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
+                {
+                    NRF_LOG_ERROR("Failed receiving NUS message. Error 0x%x. ", err_code);
+                    APP_ERROR_CHECK(err_code);
+                }
+            } while (err_code == NRF_ERROR_BUSY);
+        }
+        if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r')
+        {
+            while (app_uart_put('\n') == NRF_ERROR_BUSY);
+        }
     }
+
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -222,14 +229,22 @@ static void its_data_handler(ble_its_t * p_its, uint8_t * p_data, uint16_t lengt
  */
 static void services_init(void)
 {
-    uint32_t       err_code;
-    ble_its_init_t its_init;
+    uint32_t           err_code;
+    ble_nus_init_t     nus_init;
+    nrf_ble_qwr_init_t qwr_init = {0};
 
-    memset(&its_init, 0, sizeof(its_init));
+    // Initialize Queued Write Module.
+    qwr_init.error_handler = nrf_qwr_error_handler;
 
-    its_init.data_handler = its_data_handler;
+    err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init);
+    APP_ERROR_CHECK(err_code);
 
-    err_code = ble_its_init(&m_its, &its_init);
+    // Initialize NUS.
+    memset(&nus_init, 0, sizeof(nus_init));
+
+    nus_init.data_handler = nus_data_handler;
+
+    err_code = ble_nus_init(&m_nus, &nus_init);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -334,150 +349,74 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 }
 
 
-/**@brief Function for the application's SoftDevice event handler.
+/**@brief Function for handling BLE events.
  *
- * @param[in] p_ble_evt SoftDevice event.
+ * @param[in]   p_ble_evt   Bluetooth stack event.
+ * @param[in]   p_context   Unused.
  */
-static void on_ble_evt(ble_evt_t * p_ble_evt)
+static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
     uint32_t err_code;
 
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:
+            NRF_LOG_INFO("Connected");
             err_code = bsp_indication_set(BSP_INDICATE_CONNECTED);
             APP_ERROR_CHECK(err_code);
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            
-            printf("Connected\r\n");
-            break; // BLE_GAP_EVT_CONNECTED
+            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
+            APP_ERROR_CHECK(err_code);
+            break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-            err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-            APP_ERROR_CHECK(err_code);
+            NRF_LOG_INFO("Disconnected");
+            // LED indication will be changed when advertising starts.
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
-            
-            // Set the command to have the resolution returned to the default 320x240
-            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
-            m_new_resolution = 1;
-            
-            m_stream_mode_active = false;
-            m_ble_params_info.tx_phy = m_ble_params_info.rx_phy = 1;
-            
-            printf("Disconnected\r\n");
-            break; // BLE_GAP_EVT_DISCONNECTED
+            break;
+
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
+        {
+            NRF_LOG_DEBUG("PHY update request.");
+            ble_gap_phys_t const phys =
+            {
+                .rx_phys = BLE_GAP_PHY_AUTO,
+                .tx_phys = BLE_GAP_PHY_AUTO,
+            };
+            err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+            APP_ERROR_CHECK(err_code);
+        } break;
 
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
             // Pairing not supported
             err_code = sd_ble_gap_sec_params_reply(m_conn_handle, BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP, NULL, NULL);
             APP_ERROR_CHECK(err_code);
-            break; // BLE_GAP_EVT_SEC_PARAMS_REQUEST
-
-        case BLE_GAP_EVT_DATA_LENGTH_UPDATE_REQUEST:
-        {
-            ble_gap_data_length_params_t dl_params;
-
-            // Clearing the struct will effectivly set members to @ref BLE_GAP_DATA_LENGTH_AUTO
-            memset(&dl_params, 0, sizeof(ble_gap_data_length_params_t));
-            err_code = sd_ble_gap_data_length_update(p_ble_evt->evt.gap_evt.conn_handle, &dl_params, NULL);
-            APP_ERROR_CHECK(err_code);
-        } break;
-
-        case BLE_GAP_EVT_CONN_PARAM_UPDATE:
-        {
-            uint16_t max_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.max_conn_interval;
-            uint16_t min_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.min_conn_interval;
-
-            m_ble_params_info.con_interval = max_con_int;
-            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
-            printf("Con params updated: CI %i, %i\r\n", (int)min_con_int, (int)max_con_int);
-        } break;
-       
-        case BLE_GAP_EVT_PHY_UPDATE:
-            m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
-            m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
-            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
-            printf("Phy update: %i, %i\r\n", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
             break;
-        
+
         case BLE_GATTS_EVT_SYS_ATTR_MISSING:
             // No system attributes have been stored.
             err_code = sd_ble_gatts_sys_attr_set(m_conn_handle, NULL, 0, 0);
             APP_ERROR_CHECK(err_code);
-            break; // BLE_GATTS_EVT_SYS_ATTR_MISSING
+            break;
 
         case BLE_GATTC_EVT_TIMEOUT:
             // Disconnect on GATT Client timeout event.
             err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
-            break; // BLE_GATTC_EVT_TIMEOUT
+            break;
 
         case BLE_GATTS_EVT_TIMEOUT:
             // Disconnect on GATT Server timeout event.
             err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
-            break; // BLE_GATTS_EVT_TIMEOUT
-
-        case BLE_EVT_USER_MEM_REQUEST:
-            err_code = sd_ble_user_mem_reply(p_ble_evt->evt.gattc_evt.conn_handle, NULL);
-            APP_ERROR_CHECK(err_code);
-            break; // BLE_EVT_USER_MEM_REQUEST
-
-        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
-        {
-            ble_gatts_evt_rw_authorize_request_t  req;
-            ble_gatts_rw_authorize_reply_params_t auth_reply;
-
-            req = p_ble_evt->evt.gatts_evt.params.authorize_request;
-
-            if (req.type != BLE_GATTS_AUTHORIZE_TYPE_INVALID)
-            {
-                if ((req.request.write.op == BLE_GATTS_OP_PREP_WRITE_REQ)     ||
-                    (req.request.write.op == BLE_GATTS_OP_EXEC_WRITE_REQ_NOW) ||
-                    (req.request.write.op == BLE_GATTS_OP_EXEC_WRITE_REQ_CANCEL))
-                {
-                    if (req.type == BLE_GATTS_AUTHORIZE_TYPE_WRITE)
-                    {
-                        auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE;
-                    }
-                    else
-                    {
-                        auth_reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
-                    }
-                    auth_reply.params.write.gatt_status = APP_FEATURE_NOT_SUPPORTED;
-                    err_code = sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gatts_evt.conn_handle,
-                                                               &auth_reply);
-                    APP_ERROR_CHECK(err_code);
-                }
-            }
-        } break; // BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST
+            break;
 
         default:
             // No implementation needed.
             break;
     }
-}
-
-
-/**@brief Function for dispatching a SoftDevice event to all modules with a SoftDevice
- *        event handler.
- *
- * @details This function is called from the SoftDevice event interrupt handler after a
- *          SoftDevice event has been received.
- *
- * @param[in] p_ble_evt  SoftDevice event.
- */
-static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
-{
-    ble_conn_params_on_ble_evt(p_ble_evt);
-    nrf_ble_gatt_on_ble_evt(&m_gatt, p_ble_evt);
-    ble_its_on_ble_evt(&m_its, p_ble_evt);
-    on_ble_evt(p_ble_evt);
-    ble_advertising_on_ble_evt(p_ble_evt);
-    bsp_btn_ble_on_ble_evt(p_ble_evt);
-
 }
 
 
@@ -487,74 +426,37 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
  */
 static void ble_stack_init(void)
 {
-    uint32_t err_code;
+    ret_code_t err_code;
 
-    nrf_clock_lf_cfg_t clock_lf_cfg;
+    err_code = nrf_sdh_enable_request();
+    APP_ERROR_CHECK(err_code);
 
-    clock_lf_cfg.source        = NRF_CLOCK_LF_SRC_XTAL;
-    clock_lf_cfg.rc_ctiv       = 0;
-    clock_lf_cfg.rc_temp_ctiv  = 0;
-#ifdef S140
-    clock_lf_cfg.xtal_accuracy = NRF_CLOCK_LF_XTAL_ACCURACY_20_PPM;
-#else
-    clock_lf_cfg.accuracy = NRF_CLOCK_LF_ACCURACY_20_PPM;
-#endif
-
-    // Initialize SoftDevice.
-    SOFTDEVICE_HANDLER_INIT(&clock_lf_cfg, NULL);
-
+    // Configure the BLE stack using the default settings.
     // Fetch the start address of the application RAM.
     uint32_t ram_start = 0;
-    err_code = softdevice_app_ram_start_get(&ram_start);
-    APP_ERROR_CHECK(err_code);
-
-    // Overwrite some of the default configurations for the BLE stack.
-    ble_cfg_t ble_cfg;
-
-    // Configure the maximum number of connections.
-    memset(&ble_cfg, 0, sizeof(ble_cfg));
-    ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = BLE_GAP_ROLE_COUNT_PERIPH_DEFAULT;
-    ble_cfg.gap_cfg.role_count_cfg.central_role_count = 0;
-    ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = 0;
-    err_code = sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start);
-    APP_ERROR_CHECK(err_code);
-
-    // Configure the maximum ATT MTU.
-    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-    ble_cfg.conn_cfg.conn_cfg_tag                 = CONN_CFG_TAG;
-    ble_cfg.conn_cfg.params.gatt_conn_cfg.att_mtu = NRF_BLE_GATT_MAX_MTU_SIZE;
-    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GATT, &ble_cfg, ram_start);
-    APP_ERROR_CHECK(err_code);
-
-    // Configure the maximum event length.
-    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-    ble_cfg.conn_cfg.conn_cfg_tag                     = CONN_CFG_TAG;
-    ble_cfg.conn_cfg.params.gap_conn_cfg.event_length = 320;
-    ble_cfg.conn_cfg.params.gap_conn_cfg.conn_count   = BLE_GAP_CONN_COUNT_DEFAULT;
-    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GAP, &ble_cfg, ram_start);
+    err_code = nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
     APP_ERROR_CHECK(err_code);
 
     // Enable BLE stack.
-    err_code = softdevice_enable(&ram_start);
+    err_code = nrf_sdh_ble_enable(&ram_start);
     APP_ERROR_CHECK(err_code);
 
-    // Subscribe for BLE events.
-    err_code = softdevice_ble_evt_handler_set(ble_evt_dispatch);
-    APP_ERROR_CHECK(err_code);
+    // Register a handler for BLE events.
+    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 }
 
 
 /**@brief Function for handling events from the GATT library. */
-void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, const nrf_ble_gatt_evt_t * p_evt)
+void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
 {
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
-        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        m_ble_params_info.mtu = m_ble_its_max_data_len;
-        ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
-        printf("Data len is set to 0x%X(%d), or maybe %i\r\n", m_ble_its_max_data_len, m_ble_its_max_data_len, p_evt->params.data_length);
+        m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
     }
-    printf("ATT MTU exchange completed. central %i peripheral %i\r\n", p_gatt->att_mtu_desired_central, p_gatt->att_mtu_desired_periph);
+    NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
+                  p_gatt->att_mtu_desired_central,
+                  p_gatt->att_mtu_desired_periph);
 }
 
 
@@ -566,7 +468,7 @@ void gatt_init(void)
     err_code = nrf_ble_gatt_init(&m_gatt, gatt_evt_handler);
     APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, 64);
+    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -595,14 +497,14 @@ void bsp_event_handler(bsp_event_t event)
         case BSP_EVENT_WHITELIST_OFF:
             if (m_conn_handle == BLE_CONN_HANDLE_INVALID)
             {
-                err_code = ble_advertising_restart_without_whitelist();
+                err_code = ble_advertising_restart_without_whitelist(&m_advertising);
                 if (err_code != NRF_ERROR_INVALID_STATE)
                 {
                     APP_ERROR_CHECK(err_code);
                 }
             }
             break;
-            
+
         default:
             break;
     }
@@ -618,7 +520,7 @@ void bsp_event_handler(bsp_event_t event)
 /**@snippet [Handling the data received over UART] */
 void uart_event_handle(app_uart_evt_t * p_event)
 {
-    static uint8_t data_array[BLE_ITS_MAX_DATA_LEN];
+    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
     static uint8_t index = 0;
     uint32_t       err_code;
 
@@ -628,15 +530,17 @@ void uart_event_handle(app_uart_evt_t * p_event)
             UNUSED_VARIABLE(app_uart_get(&data_array[index]));
             index++;
 
-            if ((data_array[index - 1] == '\n') || (index >= (m_ble_its_max_data_len)))
+            if ((data_array[index - 1] == '\n') || (index >= (m_ble_nus_max_data_len)))
             {
-                NRF_LOG_DEBUG("Ready to send data over BLE NUS\r\n");
+                NRF_LOG_DEBUG("Ready to send data over BLE NUS");
                 NRF_LOG_HEXDUMP_DEBUG(data_array, index);
 
                 do
                 {
-                    err_code = ble_its_string_send(&m_its, data_array, index);
-                    if ( (err_code != NRF_ERROR_INVALID_STATE) && (err_code != NRF_ERROR_BUSY) )
+                    uint16_t length = (uint16_t)index;
+                    err_code = ble_nus_data_send(&m_nus, data_array, &length, m_conn_handle);
+                    if ( (err_code != NRF_ERROR_INVALID_STATE) && (err_code != NRF_ERROR_BUSY) &&
+                         (err_code != NRF_ERROR_NOT_FOUND) )
                     {
                         APP_ERROR_CHECK(err_code);
                     }
@@ -667,14 +571,20 @@ void uart_event_handle(app_uart_evt_t * p_event)
 static void uart_init(void)
 {
     uint32_t                     err_code;
-    app_uart_comm_params_t comm_params;
-    comm_params.rx_pin_no    = RX_PIN_NUMBER;
-    comm_params.tx_pin_no    = TX_PIN_NUMBER;
-    comm_params.rts_pin_no   = RTS_PIN_NUMBER;
-    comm_params.cts_pin_no   = CTS_PIN_NUMBER;
-    comm_params.flow_control = APP_UART_FLOW_CONTROL_DISABLED;
-    comm_params.use_parity   = false;
-    comm_params.baud_rate    = UART_BAUDRATE_BAUDRATE_Baud115200;
+    app_uart_comm_params_t const comm_params =
+    {
+        .rx_pin_no    = RX_PIN_NUMBER,
+        .tx_pin_no    = TX_PIN_NUMBER,
+        .rts_pin_no   = RTS_PIN_NUMBER,
+        .cts_pin_no   = CTS_PIN_NUMBER,
+        .flow_control = APP_UART_FLOW_CONTROL_DISABLED,
+        .use_parity   = false,
+#if defined (UART_PRESENT)
+        .baud_rate    = NRF_UART_BAUDRATE_115200
+#else
+        .baud_rate    = NRF_UARTE_BAUDRATE_115200
+#endif
+    };
 
     APP_UART_FIFO_INIT(&comm_params,
                        UART_RX_BUF_SIZE,
@@ -692,48 +602,44 @@ static void uart_init(void)
 static void advertising_init(void)
 {
     uint32_t               err_code;
-    ble_advdata_t          advdata;
-    ble_advdata_t          scanrsp;
-    ble_adv_modes_config_t options;
+    ble_advertising_init_t init;
 
-    // Build advertising data struct to pass into @ref ble_advertising_init.
-    memset(&advdata, 0, sizeof(advdata));
-    advdata.name_type          = BLE_ADVDATA_FULL_NAME;
-    advdata.include_appearance = false;
-    advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
+    memset(&init, 0, sizeof(init));
 
-    memset(&scanrsp, 0, sizeof(scanrsp));
-    scanrsp.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
-    scanrsp.uuids_complete.p_uuids  = m_adv_uuids;
+    init.advdata.name_type          = BLE_ADVDATA_FULL_NAME;
+    init.advdata.include_appearance = false;
+    init.advdata.flags              = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
 
-    memset(&options, 0, sizeof(options));
-    options.ble_adv_fast_enabled  = true;
-    options.ble_adv_fast_interval = APP_ADV_INTERVAL;
-    options.ble_adv_fast_timeout  = APP_ADV_TIMEOUT_IN_SECONDS;
+    init.srdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
+    init.srdata.uuids_complete.p_uuids  = m_adv_uuids;
 
-    err_code = ble_advertising_init(&advdata, &scanrsp, &options, on_adv_evt, NULL);
+    init.config.ble_adv_fast_enabled  = true;
+    init.config.ble_adv_fast_interval = APP_ADV_INTERVAL;
+    init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
+    init.evt_handler = on_adv_evt;
+
+    err_code = ble_advertising_init(&m_advertising, &init);
     APP_ERROR_CHECK(err_code);
 
-    ble_advertising_conn_cfg_tag_set(CONN_CFG_TAG);
+    ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
 }
 
 
-static void data_len_ext_set(bool status)
+/**@brief Function for initializing buttons and leds.
+ *
+ * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
+ */
+static void buttons_leds_init(bool * p_erase_bonds)
 {
-    uint8_t data_length = status ? (247 + 4) : (23 + 4);
-    (void) nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, data_length);
-}
+    bsp_event_t startup_event;
 
-
-static void gatt_mtu_set(uint16_t att_mtu)
-{
-    ret_code_t err_code;
-
-    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, att_mtu);
+    uint32_t err_code = bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, bsp_event_handler);
     APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, att_mtu);
+    err_code = bsp_btn_ble_init(NULL, &startup_event);
     APP_ERROR_CHECK(err_code);
+
+    *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
 }
 
 
@@ -743,53 +649,38 @@ static void log_init(void)
 {
     ret_code_t err_code = NRF_LOG_INIT(NULL);
     APP_ERROR_CHECK(err_code);
-}
 
-static void camera_init(void)
-{
-#if defined(BOARD_PCA10056)
-	#if(PCA10056_USE_FRONT_HEADER == 1)
-			myCamera.pinScl = 13;
-			myCamera.pinSda = 15;
-			myCamera.pinSck = 21;
-			myCamera.pinMiso = 23;
-			myCamera.pinMosi = 25;
-			myCamera.pinCsn = 32 + 9;
-	#else
-			myCamera.pinScl = 27;
-			myCamera.pinSda = 26;
-			myCamera.pinSck = 32 + 15;
-			myCamera.pinMiso = 32 + 14;
-			myCamera.pinMosi = 32 + 13;
-			myCamera.pinCsn = 32 + 12;
-	#endif
-#elif defined(BOARD_PCA10040)
-    myCamera.pinScl = 27;
-    myCamera.pinSda = 26;
-    myCamera.pinSck = 25;
-    myCamera.pinMiso = 24;
-    myCamera.pinMosi = 23;
-    myCamera.pinCsn = 22;
-#else
-#error Board not defined or not supported
-#endif    
-    myCamera.open();
-    myCamera.setResolution(OV2640_320x240);
+    NRF_LOG_DEFAULT_BACKENDS_INIT();
 }
 
 
-/**@brief Function for placing the application in low power state while waiting for events.
+/**@brief Function for initializing power management.
  */
-static void power_manage(void)
+static void power_management_init(void)
 {
-    uint32_t err_code = sd_app_evt_wait();
+    ret_code_t err_code;
+    err_code = nrf_pwr_mgmt_init();
     APP_ERROR_CHECK(err_code);
 }
 
 
-void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, char *message)
+/**@brief Function for handling the idle state (main loop).
+ *
+ * @details If there is no pending log operation, then sleep until next the next event occurs.
+ */
+static void idle_state_handle(void)
 {
-    printf("%s - %s\r\n", module, message);
+    UNUSED_RETURN_VALUE(NRF_LOG_PROCESS());
+    nrf_pwr_mgmt_run();
+}
+
+
+/**@brief Function for starting advertising.
+ */
+static void advertising_start(void)
+{
+    uint32_t err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -797,162 +688,30 @@ void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, c
  */
 int main(void)
 {
-    uint32_t err_code;
-    uint32_t img_data_length = 0;
-    uint8_t img_data_buffer[255];
+    bool erase_bonds;
 
     // Initialize.
-    err_code = app_timer_init();
-    APP_ERROR_CHECK(err_code);
-
     uart_init();
     log_init();
-
+    timers_init();
+    buttons_leds_init(&erase_bonds);
+    power_management_init();
     ble_stack_init();
     gap_params_init();
     gatt_init();
     services_init();
     advertising_init();
     conn_params_init();
-    
-    printf("\r\nUART Start!\r\n");
 
-    nrfSystem.setLogHandler(cpplibLogFunction);
-    nrfSystem.setLogDefaultSeverity(LS_DEBUG);
-    err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(err_code);
-
-    camera_init();
-
-    data_len_ext_set(true);
-
-    gatt_mtu_set(247);
-
+    // Start execution.
+    printf("\r\nUART started.\r\n");
+    NRF_LOG_INFO("Debug logging for UART over RTT started.");
+    advertising_start();
+    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
     // Enter main loop.
     for (;;)
     {
-        uint32_t image_size;
-        ble_gap_phys_t gap_phys_settings;    
-
-        switch(m_new_command_received)
-        {
-            case APP_CMD_SINGLE_CAPTURE:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
-                if(myCamera.bytesAvailable() == 0)
-                {
-                    printf("Starting capture...\r\n");
-                    myCamera.startSingleCapture();
-                    image_size = myCamera.bytesAvailable();
-                    printf("Capture complete: size %i bytes\r\n", (int)(image_size));
-                    ble_its_img_info_t image_info;
-                    image_info.file_size_bytes = image_size - 1;
-                    ble_its_img_info_send(&m_its, &image_info);
-                    
-                    // Flush the first byte (or the JPG image will be corrupted)
-                    myCamera.fillBuffer(img_data_buffer, 1);
-                }
-                break;
-            
-            case APP_CMD_START_STREAM:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-
-                printf("Stream mode enabled\r\n");                
-                break;
-                
-            case APP_CMD_STOP_STREAM:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                m_stream_mode_active = false;
-                printf("Stream mode disabled\r\n");
-                break;
-                
-            case APP_CMD_CHANGE_RESOLUTION:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
-                switch(m_new_resolution)
-                {
-                    case 0:
-                        myCamera.setResolution(OV2640_160x120);
-                        break;
-                    
-                    case 1:
-                        myCamera.setResolution(OV2640_320x240);
-                        break;
-
-                    case 2:
-                        myCamera.setResolution(OV2640_640x480);
-                        break;
-
-                    case 3:
-                        myCamera.setResolution(OV2640_800x600);
-                        break;
-
-                    case 4:
-                        myCamera.setResolution(OV2640_1024x768);
-                        break;
-                    
-                    case 5:
-                        myCamera.setResolution(OV2640_1600x1200);
-                        break;
-                    
-                } 
-                break;
-                
-            case APP_CMD_CHANGE_PHY:   
-                m_new_command_received = APP_CMD_NOCOMMAND;
-            
-                printf("Attempting to change phy.\r\n");
-                gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-                gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-#ifdef S140            
-                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);   
-#else            
-                sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
-#endif
-                break;
-            
-            case APP_CMD_SEND_BLE_PARAMS:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
-                break;
-            
-            default:
-                break;
-        }
-        
-        if(m_stream_mode_active)
-        {
-            if(img_data_length == 0 && myCamera.bytesAvailable() == 0)
-            {
-                myCamera.startSingleCapture();
-
-                image_size = myCamera.bytesAvailable();
-                
-                ble_its_img_info_t image_info;
-                image_info.file_size_bytes = image_size - 1;
-                ble_its_img_info_send(&m_its, &image_info);
-                
-                // Flush the first byte (or the JPG image will be corrupted)
-                myCamera.fillBuffer(img_data_buffer, 1);
-            }
-        }
-        
-        if(img_data_length > 0 || myCamera.bytesAvailable() > 0)
-        {
-            if(img_data_length == 0)
-            {
-                img_data_length = myCamera.fillBuffer(img_data_buffer, m_ble_its_max_data_len);
-            }
-            if(ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length) == NRF_SUCCESS)
-            {
-                img_data_length = 0;
-            }                
-        }
-        
-        if(m_new_command_received == APP_CMD_NOCOMMAND)
-        {
-            power_manage();
-        }
+        idle_state_handle();
     }
 }
 
