@@ -60,24 +60,42 @@
 #define BLE_IMAGE_TRANSFER_SERVICE_H__
 
 #include "sdk_config.h"
-#include "ble_stack_handler_types.h"
-
 #include "ble.h"
 #include "ble_srv_common.h"
+#include "nrf_sdh_ble.h"
+#include "ble_link_ctx_manager.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**@brief   Macro for defining a ble_its instance.
+ *
+ * @param     _name            Name of the instance.
+ * @param[in] _nus_max_clients Maximum number of NUS clients connected at a time.
+ * @hideinitializer
+ */
+#define BLE_ITS_DEF(_name, _its_max_clients)                      \
+    BLE_LINK_CTX_MANAGER_DEF(CONCAT_2(_name, _link_ctx_storage),  \
+                             (_its_max_clients),                  \
+                             sizeof(ble_its_client_context_t));   \
+    static ble_its_t _name = {0, 0, {0,0,0,0},{0,0,0,0},{0,0,0,0}, \
+                              0, 0, 0,                            \
+                              &CONCAT_2(_name, _link_ctx_storage)}; \
+    NRF_SDH_BLE_OBSERVER(_name ## _obs,                           \
+                         BLE_NUS_BLE_OBSERVER_PRIO,               \
+                         ble_its_on_ble_evt,                      \
+                         &_name)
+    
 #define BLE_UUID_ITS_SERVICE 0x0001                      /**< The UUID of the Nordic UART Service. */
 
 #define OPCODE_LENGTH 1
 #define HANDLE_LENGTH 2
 
-#if defined(NRF_BLE_GATT_MAX_MTU_SIZE) && (NRF_BLE_GATT_MAX_MTU_SIZE != 0)
-    #define BLE_ITS_MAX_DATA_LEN (NRF_BLE_GATT_MAX_MTU_SIZE - OPCODE_LENGTH - HANDLE_LENGTH) /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+#if defined(NRF_SDH_BLE_GATT_MAX_MTU_SIZE) && (NRF_SDH_BLE_GATT_MAX_MTU_SIZE != 0)
+    #define BLE_ITS_MAX_DATA_LEN (NRF_SDH_BLE_GATT_MAX_MTU_SIZE - OPCODE_LENGTH - HANDLE_LENGTH) /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 #else
-    #define BLE_ITS_MAX_DATA_LEN (BLE_GATT_MTU_SIZE_DEFAULT - OPCODE_LENGTH - HANDLE_LENGTH) /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+    #define BLE_ITS_MAX_DATA_LEN (NRF_SDH_BLE_GATT_MAX_MTU_SIZE_DEFAULT - OPCODE_LENGTH - HANDLE_LENGTH) /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
     #warning NRF_BLE_GATT_MAX_MTU_SIZE is not defined.
 #endif
 
@@ -88,7 +106,16 @@ extern "C" {
 typedef struct ble_its_s ble_its_t;
 
 /**@brief Nordic UART Service event handler type. */
-typedef void (*ble_its_data_handler_t) (ble_its_t * p_its, uint8_t * p_data, uint16_t length);
+typedef void (*ble_its_data_handler_t) (ble_its_t * p_its, uint8_t const * p_data, uint16_t length);
+
+/**@brief Nordic UART Service client context structure.
+ *
+ * @details This structure contains state context related to hosts.
+ */
+typedef struct
+{
+    bool is_notification_enabled; /**< Variable to indicate if the peer has enabled notification of the RX characteristic.*/
+} ble_its_client_context_t;
 
 /**@brief Nordic UART Service initialization structure.
  *
@@ -115,6 +142,7 @@ struct ble_its_s
     uint16_t                 conn_handle;             /**< Handle of the current connection (as provided by the SoftDevice). BLE_CONN_HANDLE_INVALID if not in a connection. */
     bool                     is_notification_enabled; /**< Variable to indicate if the peer has enabled notification of the RX characteristic.*/
     bool                     is_info_char_notification_enabled;
+    blcm_link_ctx_storage_t * const p_link_ctx_storage;
     ble_its_data_handler_t   data_handler;            /**< Event handler to be called for handling received data. */
 };
 
@@ -154,7 +182,7 @@ uint32_t ble_its_init(ble_its_t * p_its, const ble_its_init_t * p_its_init);
  * @param[in] p_its       Nordic UART Service structure.
  * @param[in] p_ble_evt   Event received from the SoftDevice.
  */
-void ble_its_on_ble_evt(ble_its_t * p_its, ble_evt_t * p_ble_evt);
+void ble_its_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context);
 
 /**@brief Function for sending a string to the peer.
  *

@@ -37,6 +37,7 @@
  * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+#include <stdio.h>
 #include "sdk_common.h"
 #if NRF_MODULE_ENABLED(BLE_NUS)
 #include "ble_image_transfer_service.h"
@@ -65,7 +66,7 @@ ble_its_t * m_its;
  * @param[in] p_its     Nordic UART Service structure.
  * @param[in] p_ble_evt Pointer to the event received from BLE stack.
  */
-static void on_connect(ble_its_t * p_its, ble_evt_t * p_ble_evt)
+static void on_connect(ble_its_t * p_its, ble_evt_t const * p_ble_evt)
 {
     p_its->conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 }
@@ -76,7 +77,7 @@ static void on_connect(ble_its_t * p_its, ble_evt_t * p_ble_evt)
  * @param[in] p_its     Nordic UART Service structure.
  * @param[in] p_ble_evt Pointer to the event received from BLE stack.
  */
-static void on_disconnect(ble_its_t * p_its, ble_evt_t * p_ble_evt)
+static void on_disconnect(ble_its_t * p_its, ble_evt_t const * p_ble_evt)
 {
     UNUSED_PARAMETER(p_ble_evt);
     p_its->conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -88,9 +89,9 @@ static void on_disconnect(ble_its_t * p_its, ble_evt_t * p_ble_evt)
  * @param[in] p_its     Nordic UART Service structure.
  * @param[in] p_ble_evt Pointer to the event received from BLE stack.
  */
-static void on_write(ble_its_t * p_its, ble_evt_t * p_ble_evt)
+static void on_write(ble_its_t * p_its, ble_evt_t const * p_ble_evt)
 {
-    ble_gatts_evt_write_t * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
+    ble_gatts_evt_write_t const * p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
     if (
         (p_evt_write->handle == p_its->tx_handles.cccd_handle)
@@ -346,13 +347,15 @@ static uint32_t push_data_packets()
 }
 
 
-void ble_its_on_ble_evt(ble_its_t * p_its, ble_evt_t * p_ble_evt)
+void ble_its_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
 {
-    if ((p_its == NULL) || (p_ble_evt == NULL))
+    if ((p_context == NULL) || (p_ble_evt == NULL))
     {
         return;
     }
-
+    
+    ble_its_t * p_its = (ble_its_t*)p_context;
+    
     switch (p_ble_evt->header.evt_id)
     {
         case BLE_GAP_EVT_CONNECTED:

@@ -63,7 +63,7 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "app_timer.h"
-#include "ble_nus.h"
+#include "ble_image_transfer_service.h"
 #include "app_uart.h"
 #include "app_util_platform.h"
 #include "bsp_btn_ble.h"
@@ -76,13 +76,20 @@
 #include "nrf_uarte.h"
 #endif
 
+#include "cl_includes.h"
+#include "cl_system.h"
+#include "cl_hal_gpio.h"
+#include "ArducamMini2MP.h"
+
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
+#define PCA10056_USE_FRONT_HEADER       1                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
+
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define DEVICE_NAME                     "Nordic_UART"                               /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Nordic_IMAGE"                              /**< Name of device. Will be included in the advertising data. */
 #define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_BLE_OBSERVER_PRIO           3                                           /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -91,8 +98,8 @@
 
 #define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(20, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(75, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8,  UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(12, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
@@ -105,18 +112,33 @@
 #define UART_RX_BUF_SIZE                256                                         /**< UART RX buffer size. */
 
 
-BLE_NUS_DEF(m_nus, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
+BLE_ITS_DEF(m_its, NRF_SDH_BLE_TOTAL_LINK_COUNT);                                   /**< BLE NUS service instance. */
 NRF_BLE_GATT_DEF(m_gatt);                                                           /**< GATT module instance. */
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
+
+static uint16_t                         m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the ITS service module. */
+static uint8_t                          m_new_command_received = 0;
+static uint8_t                          m_new_resolution, m_new_phy;
+
+static bool                             m_stream_mode_active = false;
+
+static ble_its_ble_params_info_t        m_ble_params_info = {20, 50, 1, 1};
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
 static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 static ble_uuid_t m_adv_uuids[]          =                                          /**< Universally unique service identifier. */
 {
-    {BLE_UUID_NUS_SERVICE, NUS_SERVICE_UUID_TYPE}
+    {BLE_UUID_ITS_SERVICE, NUS_SERVICE_UUID_TYPE}
 };
 
+using namespace CppLib;
+
+ArducamMini2MP myCamera;
+Button button1(BUTTON_1, true);
+
+enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, 
+      APP_CMD_CHANGE_RESOLUTION, APP_CMD_CHANGE_PHY, APP_CMD_SEND_BLE_PARAMS};
 
 /**@brief Function for assert macro callback.
  *
@@ -185,42 +207,50 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 }
 
 
-/**@brief Function for handling the data from the Nordic UART Service.
+/**@brief Function for handling the data from the ITS Service.
  *
- * @details This function will process the data received from the Nordic UART BLE Service and send
- *          it to the UART module.
+ * @details This function will process the data received from the ITS BLE Service.
  *
- * @param[in] p_evt       Nordic UART Service event.
+ * @param[in] p_its    ITS Service structure.
+ * @param[in] p_data   Data received.
+ * @param[in] length   Length of the data.
  */
 /**@snippet [Handling the data received over BLE] */
-static void nus_data_handler(ble_nus_evt_t * p_evt)
+static void its_data_handler(ble_its_t * p_its, uint8_t const * p_data, uint16_t length)
 {
-
-    if (p_evt->type == BLE_NUS_EVT_RX_DATA)
+   
+    switch(p_data[0])
     {
-        uint32_t err_code;
+        // Take picture
+        case APP_CMD_SINGLE_CAPTURE:
+        case APP_CMD_SEND_BLE_PARAMS:
+            m_new_command_received = p_data[0];
+            break;
+        
+        case APP_CMD_START_STREAM:
+            m_stream_mode_active = true;
+            m_new_command_received = p_data[0];
+            break;
 
-        NRF_LOG_DEBUG("Received data from BLE NUS. Writing data on UART.");
-        NRF_LOG_HEXDUMP_DEBUG(p_evt->params.rx_data.p_data, p_evt->params.rx_data.length);
-
-        for (uint32_t i = 0; i < p_evt->params.rx_data.length; i++)
-        {
-            do
-            {
-                err_code = app_uart_put(p_evt->params.rx_data.p_data[i]);
-                if ((err_code != NRF_SUCCESS) && (err_code != NRF_ERROR_BUSY))
-                {
-                    NRF_LOG_ERROR("Failed receiving NUS message. Error 0x%x. ", err_code);
-                    APP_ERROR_CHECK(err_code);
-                }
-            } while (err_code == NRF_ERROR_BUSY);
-        }
-        if (p_evt->params.rx_data.p_data[p_evt->params.rx_data.length - 1] == '\r')
-        {
-            while (app_uart_put('\n') == NRF_ERROR_BUSY);
-        }
+        case APP_CMD_STOP_STREAM:
+            m_stream_mode_active = false;
+            m_new_command_received = p_data[0];
+            break;
+        
+        case APP_CMD_CHANGE_RESOLUTION:
+            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
+            m_new_resolution = p_data[1];
+            break;
+        
+        case APP_CMD_CHANGE_PHY:
+            m_new_command_received = APP_CMD_CHANGE_PHY;
+            m_new_phy = p_data[1];
+            break;
+        
+        default: 
+            printf("Unknown command!!\r\n");
+            break;
     }
-
 }
 /**@snippet [Handling the data received over BLE] */
 
@@ -230,7 +260,7 @@ static void nus_data_handler(ble_nus_evt_t * p_evt)
 static void services_init(void)
 {
     uint32_t           err_code;
-    ble_nus_init_t     nus_init;
+    ble_its_init_t     its_init;
     nrf_ble_qwr_init_t qwr_init = {0};
 
     // Initialize Queued Write Module.
@@ -239,12 +269,12 @@ static void services_init(void)
     err_code = nrf_ble_qwr_init(&m_qwr, &qwr_init);
     APP_ERROR_CHECK(err_code);
 
-    // Initialize NUS.
-    memset(&nus_init, 0, sizeof(nus_init));
+    // Initialize ITS.
+    memset(&its_init, 0, sizeof(its_init));
 
-    nus_init.data_handler = nus_data_handler;
+    its_init.data_handler = its_data_handler;
 
-    err_code = ble_nus_init(&m_nus, &nus_init);
+    err_code = ble_its_init(&m_its, &its_init);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -380,8 +410,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             NRF_LOG_DEBUG("PHY update request.");
             ble_gap_phys_t const phys =
             {
-                .rx_phys = BLE_GAP_PHY_AUTO,
-                .tx_phys = BLE_GAP_PHY_AUTO,
+                BLE_GAP_PHY_AUTO,
+                BLE_GAP_PHY_AUTO,
             };
             err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
             APP_ERROR_CHECK(err_code);
@@ -520,47 +550,7 @@ void bsp_event_handler(bsp_event_t event)
 /**@snippet [Handling the data received over UART] */
 void uart_event_handle(app_uart_evt_t * p_event)
 {
-    static uint8_t data_array[BLE_NUS_MAX_DATA_LEN];
-    static uint8_t index = 0;
-    uint32_t       err_code;
 
-    switch (p_event->evt_type)
-    {
-        case APP_UART_DATA_READY:
-            UNUSED_VARIABLE(app_uart_get(&data_array[index]));
-            index++;
-
-            if ((data_array[index - 1] == '\n') || (index >= (m_ble_nus_max_data_len)))
-            {
-                NRF_LOG_DEBUG("Ready to send data over BLE NUS");
-                NRF_LOG_HEXDUMP_DEBUG(data_array, index);
-
-                do
-                {
-                    uint16_t length = (uint16_t)index;
-                    err_code = ble_nus_data_send(&m_nus, data_array, &length, m_conn_handle);
-                    if ( (err_code != NRF_ERROR_INVALID_STATE) && (err_code != NRF_ERROR_BUSY) &&
-                         (err_code != NRF_ERROR_NOT_FOUND) )
-                    {
-                        APP_ERROR_CHECK(err_code);
-                    }
-                } while (err_code == NRF_ERROR_BUSY);
-
-                index = 0;
-            }
-            break;
-
-        case APP_UART_COMMUNICATION_ERROR:
-            APP_ERROR_HANDLER(p_event->data.error_communication);
-            break;
-
-        case APP_UART_FIFO_ERROR:
-            APP_ERROR_HANDLER(p_event->data.error_code);
-            break;
-
-        default:
-            break;
-    }
 }
 /**@snippet [Handling the data received over UART] */
 
@@ -573,16 +563,16 @@ static void uart_init(void)
     uint32_t                     err_code;
     app_uart_comm_params_t const comm_params =
     {
-        .rx_pin_no    = RX_PIN_NUMBER,
-        .tx_pin_no    = TX_PIN_NUMBER,
-        .rts_pin_no   = RTS_PIN_NUMBER,
-        .cts_pin_no   = CTS_PIN_NUMBER,
-        .flow_control = APP_UART_FLOW_CONTROL_DISABLED,
-        .use_parity   = false,
+        RX_PIN_NUMBER,
+        TX_PIN_NUMBER,
+        RTS_PIN_NUMBER,
+        CTS_PIN_NUMBER,
+        APP_UART_FLOW_CONTROL_DISABLED,
+        false,
 #if defined (UART_PRESENT)
-        .baud_rate    = NRF_UART_BAUDRATE_115200
+        NRF_UART_BAUDRATE_115200
 #else
-        .baud_rate    = NRF_UARTE_BAUDRATE_115200
+        NRF_UARTE_BAUDRATE_115200
 #endif
     };
 
@@ -643,6 +633,58 @@ static void buttons_leds_init(bool * p_erase_bonds)
 }
 
 
+static void data_len_ext_set(bool status)
+{
+    uint8_t data_length = status ? (247 + 4) : (23 + 4);
+    (void) nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, data_length);
+}
+
+
+static void gatt_mtu_set(uint16_t att_mtu)
+{
+    ret_code_t err_code;
+
+    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, att_mtu);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+static void camera_init(void)
+{
+#if defined(BOARD_PCA10056)
+	#if(PCA10056_USE_FRONT_HEADER == 1)
+			myCamera.pinScl = 13;
+			myCamera.pinSda = 15;
+			myCamera.pinSck = 21;
+			myCamera.pinMiso = 23;
+			myCamera.pinMosi = 25;
+			myCamera.pinCsn = 32 + 9;
+	#else
+			myCamera.pinScl = 27;
+			myCamera.pinSda = 26;
+			myCamera.pinSck = 32 + 15;
+			myCamera.pinMiso = 32 + 14;
+			myCamera.pinMosi = 32 + 13;
+			myCamera.pinCsn = 32 + 12;
+	#endif
+#elif defined(BOARD_PCA10040)
+    myCamera.pinScl = 27;
+    myCamera.pinSda = 26;
+    myCamera.pinSck = 25;
+    myCamera.pinMiso = 24;
+    myCamera.pinMosi = 23;
+    myCamera.pinCsn = 22;
+#else
+#error Board not defined or not supported
+#endif    
+    myCamera.open();
+    myCamera.setResolution(OV2640_320x240);
+}
+
+
 /**@brief Function for initializing the nrf log module.
  */
 static void log_init(void)
@@ -654,16 +696,6 @@ static void log_init(void)
 }
 
 
-/**@brief Function for initializing power management.
- */
-static void power_management_init(void)
-{
-    ret_code_t err_code;
-    err_code = nrf_pwr_mgmt_init();
-    APP_ERROR_CHECK(err_code);
-}
-
-
 /**@brief Function for handling the idle state (main loop).
  *
  * @details If there is no pending log operation, then sleep until next the next event occurs.
@@ -671,7 +703,7 @@ static void power_management_init(void)
 static void idle_state_handle(void)
 {
     UNUSED_RETURN_VALUE(NRF_LOG_PROCESS());
-    nrf_pwr_mgmt_run();
+    sd_app_evt_wait();
 }
 
 
@@ -684,10 +716,19 @@ static void advertising_start(void)
 }
 
 
+void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, char *message)
+{
+    printf("%s - %s\r\n", module, message);
+}
+
+
 /**@brief Application main function.
  */
 int main(void)
 {
+    uint32_t img_data_length = 0;
+    uint8_t img_data_buffer[255];
+    
     bool erase_bonds;
 
     // Initialize.
@@ -695,23 +736,156 @@ int main(void)
     log_init();
     timers_init();
     buttons_leds_init(&erase_bonds);
-    power_management_init();
     ble_stack_init();
     gap_params_init();
     gatt_init();
     services_init();
     advertising_init();
     conn_params_init();
-
+    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
+    
+    
     // Start execution.
     printf("\r\nUART started.\r\n");
+    
+    nrfSystem.setLogHandler(cpplibLogFunction);
+    nrfSystem.setLogDefaultSeverity(LS_DEBUG);
+    
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
+    
+    camera_init();
+
+    data_len_ext_set(true);
+
+    gatt_mtu_set(247);
+
     advertising_start();
-    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
+
     // Enter main loop.
     for (;;)
     {
-        idle_state_handle();
+        uint32_t image_size;
+        ble_gap_phys_t gap_phys_settings;    
+
+        switch(m_new_command_received)
+        {
+            case APP_CMD_SINGLE_CAPTURE:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
+                if(myCamera.bytesAvailable() == 0)
+                {
+                    printf("Starting capture...\r\n");
+                    myCamera.startSingleCapture();
+                    image_size = myCamera.bytesAvailable();
+                    printf("Capture complete: size %i bytes\r\n", (int)(image_size));
+                    ble_its_img_info_t image_info;
+                    image_info.file_size_bytes = image_size - 1;
+                    ble_its_img_info_send(&m_its, &image_info);
+                    
+                    // Flush the first byte (or the JPG image will be corrupted)
+                    myCamera.fillBuffer(img_data_buffer, 1);
+                }
+                break;
+            
+            case APP_CMD_START_STREAM:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+
+                printf("Stream mode enabled\r\n");                
+                break;
+                
+            case APP_CMD_STOP_STREAM:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                m_stream_mode_active = false;
+                printf("Stream mode disabled\r\n");
+                break;
+                
+            case APP_CMD_CHANGE_RESOLUTION:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
+                switch(m_new_resolution)
+                {
+                    case 0:
+                        myCamera.setResolution(OV2640_160x120);
+                        break;
+                    
+                    case 1:
+                        myCamera.setResolution(OV2640_320x240);
+                        break;
+
+                    case 2:
+                        myCamera.setResolution(OV2640_640x480);
+                        break;
+
+                    case 3:
+                        myCamera.setResolution(OV2640_800x600);
+                        break;
+
+                    case 4:
+                        myCamera.setResolution(OV2640_1024x768);
+                        break;
+                    
+                    case 5:
+                        myCamera.setResolution(OV2640_1600x1200);
+                        break;
+                    
+                } 
+                break;
+                
+            case APP_CMD_CHANGE_PHY:   
+                m_new_command_received = APP_CMD_NOCOMMAND;
+            
+                printf("Attempting to change phy.\r\n");
+                gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+                gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+#ifdef S140            
+                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);   
+#else            
+                sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
+#endif
+                break;
+            
+            case APP_CMD_SEND_BLE_PARAMS:
+                m_new_command_received = APP_CMD_NOCOMMAND;
+                ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
+                break;
+            
+            default:
+                break;
+        }
+        
+        if(m_stream_mode_active)
+        {
+            if(img_data_length == 0 && myCamera.bytesAvailable() == 0)
+            {
+                myCamera.startSingleCapture();
+
+                image_size = myCamera.bytesAvailable();
+                
+                ble_its_img_info_t image_info;
+                image_info.file_size_bytes = image_size - 1;
+                ble_its_img_info_send(&m_its, &image_info);
+                
+                // Flush the first byte (or the JPG image will be corrupted)
+                myCamera.fillBuffer(img_data_buffer, 1);
+            }
+        }
+        
+        if(img_data_length > 0 || myCamera.bytesAvailable() > 0)
+        {
+            if(img_data_length == 0)
+            {
+                img_data_length = myCamera.fillBuffer(img_data_buffer, m_ble_its_max_data_len);
+            }
+            if(ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length) == NRF_SUCCESS)
+            {
+                img_data_length = 0;
+            }                
+        }
+        
+        if(m_new_command_received == APP_CMD_NOCOMMAND)
+        {
+            idle_state_handle();
+        }
     }
 }
 
