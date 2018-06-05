@@ -46,6 +46,7 @@ void SpiMaster::open()
         mBase->INTENSET  = SPIM_INTENSET_END_Msk;
         mBase->EVENTS_END = 0;
         NVIC_SetPriority((IRQn_Type)cpplibResourceSpimIrqN[mSpimPeripheralIndex], 7);
+        NVIC_ClearPendingIRQ((IRQn_Type)cpplibResourceSpimIrqN[mSpimPeripheralIndex]);
         NVIC_EnableIRQ((IRQn_Type)cpplibResourceSpimIrqN[mSpimPeripheralIndex]);
         mBase->ENABLE = SPIM_ENABLE_ENABLE_Enabled << SPIM_ENABLE_ENABLE_Pos;
         nrfSystem.registerError(LS_DEBUG, "SPIM", 0, "Spi master interface created");

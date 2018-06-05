@@ -80,6 +80,8 @@
 #include "cl_system.h"
 #include "cl_hal_gpio.h"
 #include "ArducamMini2MP.h"
+#include "cl_hal_spi.h"
+#include "nrf_delay.h"
 
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -721,6 +723,7 @@ void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, c
     printf("%s - %s\r\n", module, message);
 }
 
+SpiMaster mySpi;
 
 /**@brief Application main function.
  */
@@ -752,7 +755,7 @@ int main(void)
     nrfSystem.setLogDefaultSeverity(LS_DEBUG);
     
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
-    
+      
     camera_init();
 
     data_len_ext_set(true);
