@@ -55,7 +55,6 @@
 
 #include "nrf_log.h"
 
-
 volatile uint32_t file_size = 0, file_pos = 0, m_max_data_length = 20;
 uint8_t * file_data;
 ble_its_t * m_its;
@@ -102,12 +101,10 @@ static void on_write(ble_its_t * p_its, ble_evt_t const * p_ble_evt)
         if (ble_srv_is_notification_enabled(p_evt_write->data))
         {
             p_its->is_notification_enabled = true;
-            printf("T1");
         }
         else
         {
             p_its->is_notification_enabled = false;
-            printf("T0");
         }
     }
     else if (
@@ -119,12 +116,10 @@ static void on_write(ble_its_t * p_its, ble_evt_t const * p_ble_evt)
         if (ble_srv_is_notification_enabled(p_evt_write->data))
         {
             p_its->is_info_char_notification_enabled = true;
-            printf("S1");
         }
         else
         {
             p_its->is_info_char_notification_enabled = false;
-            printf("S0");
         }
     }
     else if (

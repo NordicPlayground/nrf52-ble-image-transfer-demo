@@ -242,7 +242,7 @@ static void its_data_handler(ble_its_t * p_its, uint8_t const * p_data, uint16_t
             break;
         
         default: 
-            printf("Unknown command!!\r\n");
+            NRF_LOG_ERROR("Unknown command!!");
             break;
     }
 }
@@ -733,8 +733,6 @@ int main(void)
     sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
     
     // Start execution.
-    printf("\r\nUART started.\r\n");
-    
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
       
     camera_init();
@@ -758,10 +756,10 @@ int main(void)
                 //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
                 if(arducam_mini_2mp_bytesAvailable() == 0)
                 {
-                    printf("Starting capture...\r\n");
+                    NRF_LOG_INFO("Starting capture...");
                     arducam_mini_2mp_startSingleCapture();
                     image_size = arducam_mini_2mp_bytesAvailable();
-                    printf("Capture complete: size %i bytes\r\n", (int)(image_size));
+                    NRF_LOG_INFO("Capture complete: size %i bytes", (int)(image_size));
                     ble_its_img_info_t image_info;
                     image_info.file_size_bytes = image_size - 1;
                     ble_its_img_info_send(&m_its, &image_info);
@@ -774,18 +772,18 @@ int main(void)
             case APP_CMD_START_STREAM:
                 m_new_command_received = APP_CMD_NOCOMMAND;
 
-                printf("Stream mode enabled\r\n");                
+                NRF_LOG_INFO("Stream mode enabled");                
                 break;
                 
             case APP_CMD_STOP_STREAM:
                 m_new_command_received = APP_CMD_NOCOMMAND;
                 m_stream_mode_active = false;
-                printf("Stream mode disabled\r\n");
+                NRF_LOG_INFO("Stream mode disabled");
                 break;
                 
             case APP_CMD_CHANGE_RESOLUTION:
                 m_new_command_received = APP_CMD_NOCOMMAND;
-                printf("Change resolution to mode: %i\r\n", (int)m_new_resolution);
+                NRF_LOG_INFO("Change resolution to mode: %i", (int)m_new_resolution);
                 switch(m_new_resolution)
                 {
                     case 0:
@@ -818,7 +816,7 @@ int main(void)
             case APP_CMD_CHANGE_PHY:   
                 m_new_command_received = APP_CMD_NOCOMMAND;
             
-                printf("Attempting to change phy.\r\n");
+                NRF_LOG_INFO("Attempting to change phy.");
                 gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
 #ifdef S140            
