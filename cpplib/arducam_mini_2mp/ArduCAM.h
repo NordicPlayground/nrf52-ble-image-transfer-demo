@@ -335,6 +335,8 @@ struct sensor_reg {
 	uint16_t reg;
 	uint16_t val;
 };
+    
+typedef void (*arducam_spi_callback_t)(uint32_t tx_bytes, uint32_t rx_bytes);
 
 void arducam_init(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck);
 void arducam_InitCAM(void);
@@ -346,7 +348,7 @@ void arducam_CS_LOW(void);
 uint8_t arducam_spiWrite(uint8_t dataByte);
 void arducam_spiFinalize(void);
 void arducam_spiReadMulti(uint8_t *rxBuf, uint32_t length);
-void arducam_spiRegisterCallback(void);
+void arducam_spiRegisterCallback(arducam_spi_callback_t callback);
 
 void arducam_flush_fifo(void);
 void arducam_start_capture(void);

@@ -45,7 +45,7 @@ void ArducamMini2MP_init()
 
 void spiCallback(uint32_t txBytesSent, uint32_t rxBytesReceived)
 {
-    //ArducamMini2MP::activeInstance->onSpiInterrupt(txBytesSent, rxBytesReceived);
+    arducam_mini_2mp_onSpiInterrupt(txBytesSent, rxBytesReceived);
 }
 
 void arducam_mini_2mp_open(arducam_mini_2mp_init_t *config)
@@ -57,7 +57,7 @@ void arducam_mini_2mp_open(arducam_mini_2mp_init_t *config)
 
     //nrfSystem.registerError(LS_DEBUG, "ARDUCAM", 0, "Camera Start");
     
-    //arducam_spiRegisterCallback(spiCallback);
+    arducam_spiRegisterCallback(spiCallback);
     
     //Check if the ArduCAM SPI bus is OK
     arducam_write_reg(ARDUCHIP_TEST1, 0x55);
@@ -116,6 +116,7 @@ void arducam_mini_2mp_startSingleCapture()
         while(!arducam_get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
         
         mBytesLeftInCamera = arducam_read_fifo_length();// - 1;
+        nrf_delay_us(500);
         arducam_CS_LOW();
         arducam_set_fifo_burst();
         //arducam_spiWrite(0);
@@ -176,11 +177,8 @@ uint32_t arducam_mini_2mp_fillBuffer(uint8_t *buffer, uint32_t bufferSize)
         transactionLength = (bytesToRead - i) > 255 ? 255 : (bytesToRead - i);
         arducam_spiReadMulti(buffer, transactionLength);
         
-        // TODO: Wait for SPI to complete
-        //arducam_spiFinalize();
-        
         buffer += transactionLength;
-        //nrf_delay_us(2);
+        nrf_delay_us(2);
     }
     
     if(mBytesLeftInCamera == 0)

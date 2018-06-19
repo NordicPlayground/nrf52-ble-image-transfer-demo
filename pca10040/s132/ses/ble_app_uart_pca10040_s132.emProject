@@ -8,6 +8,7 @@
       arm_endian="Little"
       arm_fp_abi="Hard"
       arm_fpu_type="FPv4-SP-D16"
+      arm_linker_allow_multiple_definition="Yes"
       arm_linker_heap_size="8192"
       arm_linker_process_stack_size="0"
       arm_linker_stack_size="8192"

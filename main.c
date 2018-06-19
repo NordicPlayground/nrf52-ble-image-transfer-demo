@@ -732,9 +732,8 @@ int main(void)
     conn_params_init();
     sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
     
-    
     // Start execution.
-    //printf("\r\nUART started.\r\n");
+    printf("\r\nUART started.\r\n");
     
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
       

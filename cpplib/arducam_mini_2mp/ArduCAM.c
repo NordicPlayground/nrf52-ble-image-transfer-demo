@@ -119,6 +119,9 @@ uint32_t pinScl;
 uint32_t err_code;
 
 static volatile bool spi_busy = false;
+static volatile bool twim_busy = false;
+
+static arducam_spi_callback_t m_spi_callback = 0;
 
 //Assert CS signal
 void arducam_CS_LOW(void)
@@ -142,7 +145,7 @@ uint8_t arducam_spiWrite(uint8_t dataByte)
     spi_transfer.rx_length = 1;
     spi_busy = true;
     nrfx_spim_xfer(&cam_spi, &spi_transfer, 0);
-    while(!spi_busy);
+    while(spi_busy);
     return return_value;
 }
 
@@ -153,7 +156,7 @@ void arducam_spiReadMulti(uint8_t *rxBuf, uint32_t length)
     spi_transfer.rx_length = length;
     spi_busy = true;
     nrfx_spim_xfer(&cam_spi, &spi_transfer, 0);
-    while(!spi_busy); 
+    while(spi_busy); 
 }
 
 //Set corresponding bit
@@ -271,12 +274,17 @@ void arducam_init(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint3
     switch (sensor_model)
     {
         case OV2640:
-            //mTwiMaster.address = 0x60 >> 1;
+            sensor_addr = 0x60 >> 1;
             break;
         default:
-            //mTwiMaster.address = 0x42;
+            sensor_addr = 0x42;
             break;
     }
+}
+    
+void arducam_spiRegisterCallback(arducam_spi_callback_t callback)
+{
+    m_spi_callback = callback;
 }
 
 static void spim_evt_handler(nrfx_spim_evt_t const * p_event, void *p)
@@ -285,6 +293,10 @@ static void spim_evt_handler(nrfx_spim_evt_t const * p_event, void *p)
     {
         case NRFX_SPIM_EVENT_DONE:
             spi_busy = false;
+            if(m_spi_callback)
+            {
+                m_spi_callback(p_event->xfer_desc.tx_length, p_event->xfer_desc.rx_length);
+            }
             break;
             
         default:
@@ -292,13 +304,12 @@ static void spim_evt_handler(nrfx_spim_evt_t const * p_event, void *p)
     }
 }
 
-volatile bool twim_done = true;
 static void twim_evt_handler(nrfx_twim_evt_t const * p_event, void *p)
 {
     switch(p_event->type)
     {
         case NRFX_TWIM_EVT_DONE:
-            twim_done = true;
+            twim_busy = false;
             break;
             
         case NRFX_TWIM_EVT_DATA_NACK:
@@ -317,7 +328,7 @@ void arducam_spiTwiInit()
     spi_config.sck_pin  = pinSck;
     spi_config.bit_order = 0;
     spi_config.mode = 0;
-    spi_config.frequency = NRF_SPIM_FREQ_250K;
+    spi_config.frequency = NRF_SPIM_FREQ_1M;
     nrf_gpio_cfg_output(pinCsn);
     nrf_gpio_pin_set(pinCsn);
 
@@ -326,12 +337,13 @@ void arducam_spiTwiInit()
     nrfx_twim_config_t twi_config = NRFX_TWIM_DEFAULT_CONFIG;
     twi_config.sda = pinSda;
     twi_config.scl = pinScl;
-    nrfx_twim_init(&cam_twi, &twi_config, twim_evt_handler, NULL);
+    err_code = nrfx_twim_init(&cam_twi, &twi_config, twim_evt_handler, NULL);
+    nrfx_twim_enable(&cam_twi);
 }
 
 static void arducam_twi_tx_rx(uint8_t *tx_data, uint32_t tx_len, uint8_t *rx_data, uint32_t rx_len)
 {
-    while(!twim_done);
+    while(twim_busy);
     nrfx_twim_xfer_desc_t twim_xfer_config;
     twim_xfer_config.address = sensor_addr;
     twim_xfer_config.p_primary_buf = tx_data;
@@ -339,7 +351,7 @@ static void arducam_twi_tx_rx(uint8_t *tx_data, uint32_t tx_len, uint8_t *rx_dat
     twim_xfer_config.p_secondary_buf = rx_data;
     twim_xfer_config.secondary_length = rx_len;
     twim_xfer_config.type = (rx_len > 0) ? NRFX_TWIM_XFER_TXRX : NRFX_TWIM_XFER_TX;
-    twim_done = false;
+    twim_busy = true;
     nrfx_twim_xfer(&cam_twi, &twim_xfer_config, (rx_len > 0) ? NRFX_TWIM_FLAG_TX_NO_STOP : 0);
 }
 
@@ -400,7 +412,8 @@ uint32_t arducam_read_fifo_length(void)
 //Support ArduCAM Mini only
 void arducam_set_fifo_burst()
 {
-    //mSpiMaster.put(BURST_FIFO_READ);
+    uint8_t cmd = BURST_FIFO_READ;
+    arducam_spiWrite(cmd);
 }
 
 //I2C Write 8bit address, 8bit data
@@ -410,7 +423,7 @@ uint8_t arducam_wrSensorReg8_8(int regID, int regDat)
     twiBuf[0] = regID & 0x00FF;
     twiBuf[1] = regDat & 0x00FF;
     arducam_twi_tx_rx(twiBuf, 2, 0, 0);
-    while(!twim_done);
+    while(twim_busy);
     nrf_delay_ms(1);
     return (1);
 }
@@ -419,7 +432,7 @@ uint8_t arducam_wrSensorReg8_8(int regID, int regDat)
 uint8_t arducam_rdSensorReg8_8(uint8_t regID, uint8_t* regDat)
 {
     arducam_twi_tx_rx(&regID, 1, regDat, 1);
-    while(!twim_done);
+    while(twim_busy);
     nrf_delay_ms(1);
     return (1);
 }
@@ -429,7 +442,7 @@ uint8_t arducam_wrSensorReg8_16(int regID, int regDat)
 {
     uint8_t txBuf[3] = {regID & 0x00FF, regDat >> 8, regDat & 0x00FF};
     arducam_twi_tx_rx(txBuf, 3, 0, 0);
-    while(!twim_done);
+    while(twim_busy);
     nrf_delay_ms(1);
     return (1);
 }
@@ -439,7 +452,7 @@ uint8_t arducam_rdSensorReg8_16(uint8_t regID, uint16_t* regDat)
 {
     uint8_t rxBuf[2];
     arducam_twi_tx_rx(regID, 1, rxBuf, 2);
-    while(!twim_done);
+    while(twim_busy);
     *regDat = rxBuf[0] << 8 | rxBuf[1];
     nrf_delay_ms(1);
     return (1);
@@ -450,7 +463,7 @@ uint8_t arducam_wrSensorReg16_8(int regID, int regDat)
 {
     uint8_t txBuf[3] = {regID >> 8, regID & 0x00FF, regDat & 0x00FF};
     arducam_twi_tx_rx(txBuf, 3, 0, 0);
-    while(!twim_done);    
+    while(twim_busy);    
     nrf_delay_ms(1);
     return (1);
 }
@@ -460,7 +473,7 @@ uint8_t arducam_rdSensorReg16_8(uint16_t regID, uint8_t* regDat)
 {
     uint8_t txBuf[2] = {regID >> 8, regID & 0x00FF};
     arducam_twi_tx_rx(txBuf, 2, regDat, 1);
-    while(!twim_done); 
+    while(twim_busy); 
     nrf_delay_ms(1);
     return (1);
 }
@@ -470,7 +483,7 @@ uint8_t arducam_wrSensorReg16_16(int regID, int regDat)
 {
     uint8_t txBuf[4] = {regID >> 8, regID & 0x00FF, regDat >> 8, regDat & 0x00FF};
     arducam_twi_tx_rx(txBuf, 4, 0, 0);
-    while(!twim_done);
+    while(twim_busy);
     nrf_delay_ms(1);
     return (1);
 }
@@ -482,7 +495,7 @@ uint8_t arducam_rdSensorReg16_16(uint16_t regID, uint16_t* regDat)
     uint8_t rxBuf[2];
     arducam_spiEnable(false);
     arducam_twi_tx_rx(txBuf, 2, rxBuf, 2);
-    while(!twim_done);
+    while(twim_busy);
     *regDat = rxBuf[0] << 8 | rxBuf[1];
     nrf_delay_ms(1);
     return (1);
