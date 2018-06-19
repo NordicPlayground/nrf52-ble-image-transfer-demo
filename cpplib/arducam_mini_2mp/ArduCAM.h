@@ -91,16 +91,14 @@
 --------------------------------------*/
 
 
-#ifndef ArduCAM_H
-#define ArduCAM_H
+#ifndef __ArduCAM_H
+#define __ArduCAM_H
 
 //#include "Arduino.h"
 //#include <pins_arduino.h>
-#include "hal//cl_hal_spi.h"
-#include "hal//cl_hal_twi_master.h"
-#include "hal//cl_hal_gpio.h"
 #include <stdint.h>
-#include "memorysaver.h"
+#include "nrfx_spim.h"
+#include "nrfx_twim.h"
 
 #if defined (__AVR__)
 #define cbi(reg, bitmask) *reg &= ~bitmask
@@ -338,85 +336,63 @@ struct sensor_reg {
 	uint16_t val;
 };
 
-class ArduCAM
-{
-	public:    
-		ArduCAM(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck);
-		void InitCAM();
-		
-        void spiEnable(bool spiEnable);
-    
-		void CS_HIGH(void);
-		void CS_LOW(void);
-        uint8_t spiWrite(uint8_t dataByte);
-        void spiFinalize() { while(mSpiMaster.isBusy()); }
-        void spiReadMulti(uint8_t *rxBuf, uint32_t length);
-        void spiRegisterCallback(CppLib::SpiCallbackT callback) { mSpiMaster.registerCallback(callback); }
-		
-		void flush_fifo(void);
-		void start_capture(void);
-		void clear_fifo_flag(void);
-		uint8_t read_fifo(void);
-		
-		uint8_t read_reg(uint8_t addr);
-		void write_reg(uint8_t addr, uint8_t data);
+void arducam_init(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck);
+void arducam_InitCAM(void);
 
-		uint32_t read_fifo_length(void);
-		void set_fifo_burst(void);
-		void set_bit(uint8_t addr, uint8_t bit);
-		void clear_bit(uint8_t addr, uint8_t bit);
-		uint8_t get_bit(uint8_t addr, uint8_t bit);
-		void set_mode(uint8_t mode);
-		
-		int wrSensorRegs(const struct sensor_reg*);
-		int wrSensorRegs8_8(const struct sensor_reg*);
-		int wrSensorRegs8_16(const struct sensor_reg*);
-		int wrSensorRegs16_8(const struct sensor_reg*);
-		int wrSensorRegs16_16(const struct sensor_reg*);
-		
-		uint8_t wrSensorReg(int regID, int regDat);
-		uint8_t wrSensorReg8_8(int regID, int regDat);
-		uint8_t wrSensorReg8_16(int regID, int regDat);
-		uint8_t wrSensorReg16_8(int regID, int regDat);
-		uint8_t wrSensorReg16_16(int regID, int regDat);
-		
-		uint8_t rdSensorReg8_8(uint8_t regID, uint8_t* regDat);
-		uint8_t rdSensorReg16_8(uint16_t regID, uint8_t* regDat);
-		uint8_t rdSensorReg8_16(uint8_t regID, uint16_t* regDat);
-		uint8_t rdSensorReg16_16(uint16_t regID, uint16_t* regDat);
-		
-		void OV2640_set_JPEG_size(uint8_t size);
-		void OV5642_set_JPEG_size(uint8_t size);
-		void OV5640_set_JPEG_size(uint8_t size);
-		void set_format(uint8_t fmt);
-		
-		void transferBytes_(uint8_t * out, uint8_t * in, uint8_t size);
-        void transferBytes(uint8_t * out, uint8_t * in, uint32_t size);
-        inline void setDataBits(uint16_t bits);
-    
-		int bus_write(int address, int value);
-		uint8_t bus_read(int address);	
+void arducam_spiEnable(bool spiEnable);
+
+void arducam_CS_HIGH(void);
+void arducam_CS_LOW(void);
+uint8_t arducam_spiWrite(uint8_t dataByte);
+void arducam_spiFinalize(void);
+void arducam_spiReadMulti(uint8_t *rxBuf, uint32_t length);
+void arducam_spiRegisterCallback(void);
+
+void arducam_flush_fifo(void);
+void arducam_start_capture(void);
+void arducam_clear_fifo_flag(void);
+uint8_t arducam_read_fifo(void);
+
+uint8_t arducam_read_reg(uint8_t addr);
+void arducam_write_reg(uint8_t addr, uint8_t data);
+
+uint32_t arducam_read_fifo_length(void);
+void arducam_set_fifo_burst(void);
+void arducam_set_bit(uint8_t addr, uint8_t bit);
+void arducam_clear_bit(uint8_t addr, uint8_t bit);
+uint8_t arducam_get_bit(uint8_t addr, uint8_t bit);
+void arducam_set_mode(uint8_t mode);
+
+int arducam_wrSensorRegs(const struct sensor_reg*);
+int arducam_wrSensorRegs8_8(const struct sensor_reg*);
+int arducam_wrSensorRegs8_16(const struct sensor_reg*);
+int arducam_wrSensorRegs16_8(const struct sensor_reg*);
+int arducam_wrSensorRegs16_16(const struct sensor_reg*);
+
+uint8_t arducam_wrSensorReg(int regID, int regDat);
+uint8_t arducam_wrSensorReg8_8(int regID, int regDat);
+uint8_t arducam_wrSensorReg8_16(int regID, int regDat);
+uint8_t arducam_wrSensorReg16_8(int regID, int regDat);
+uint8_t arducam_wrSensorReg16_16(int regID, int regDat);
+
+uint8_t arducam_rdSensorReg8_8(uint8_t regID, uint8_t* regDat);
+uint8_t arducam_rdSensorReg16_8(uint16_t regID, uint8_t* regDat);
+uint8_t arducam_rdSensorReg8_16(uint8_t regID, uint16_t* regDat);
+uint8_t arducam_rdSensorReg16_16(uint16_t regID, uint16_t* regDat);
+
+void arducam_OV2640_set_JPEG_size(uint8_t size);
+void arducam_OV5642_set_JPEG_size(uint8_t size);
+void arducam_OV5640_set_JPEG_size(uint8_t size);
+void arducam_set_format(uint8_t fmt);
+
+void arducam_transferBytes_(uint8_t * out, uint8_t * in, uint8_t size);
+void arducam_transferBytes(uint8_t * out, uint8_t * in, uint32_t size);
+inline void arducam_setDataBits(uint16_t bits);
+
+int arducam_bus_write(int address, int value);
+uint8_t arducam_bus_read(int address);	
         
-	protected:    
-		regtype *P_CS;
-		regsize B_CS;
-  		uint8_t m_fmt;
-		uint8_t sensor_model;
-		uint8_t sensor_addr; 
-    
-        void spiTwiInit();
-    
-        CppLib::SpiMaster mSpiMaster;
-        CppLib::TwiMaster mTwiMaster;
-    
-    private:
-        uint32_t pinCsn;
-        uint32_t pinMosi;
-        uint32_t pinMiso;
-        uint32_t pinSck;
-        uint32_t pinSda;
-        uint32_t pinScl;
-};
+void arducam_spiTwiInit(void);
 
 #if defined OV7660_CAM	
 	#include "ov7660_regs.h"

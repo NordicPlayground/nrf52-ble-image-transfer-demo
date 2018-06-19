@@ -1,6 +1,6 @@
-#ifndef OV2640_REGS_H
-#define OV2640_REGS_H
-#include "ArduCAM.h"
+#ifndef __OV2640_REGS_H
+#define __OV2640_REGS_H
+//#include "ArduCAM.h"
 //#include <avr/pgmspace.h>
 
 #define OV2640_CHIPID_HIGH 	0x0A

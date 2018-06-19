@@ -64,6 +64,7 @@
 #include "ble_srv_common.h"
 #include "nrf_sdh_ble.h"
 #include "ble_link_ctx_manager.h"
+#include "app_util_platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -152,7 +153,7 @@ typedef struct
     
 }ble_its_img_info_t;
 
-typedef __packed struct 
+typedef PACKED_STRUCT
 {
     uint16_t mtu;
     uint16_t con_interval;

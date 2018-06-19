@@ -1485,6 +1485,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>nrfx_twim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\..\modules\nrfx\drivers\src\nrfx_twim.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -3472,38 +3477,13 @@
           <Files>
             <File>
               <FileName>ArduCAM.cpp</FileName>
-              <FileType>8</FileType>
+              <FileType>1</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
             </File>
             <File>
               <FileName>ArducamMini2MP.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_gpio.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_gpio.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_ppi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_ppi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_spi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_spi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_system.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\system\cl_system.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_twi_master.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -4993,6 +4973,11 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>nrfx_twim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\..\modules\nrfx\drivers\src\nrfx_twim.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -6980,38 +6965,13 @@
           <Files>
             <File>
               <FileName>ArduCAM.cpp</FileName>
-              <FileType>8</FileType>
+              <FileType>1</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArduCAM.cpp</FilePath>
             </File>
             <File>
               <FileName>ArducamMini2MP.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\cpplib\arducam_mini_2mp\ArducamMini2MP.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_gpio.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_gpio.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_ppi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_ppi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_spi.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_spi.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_system.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\system\cl_system.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>cl_hal_twi_master.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\cpplib\hal\cl_hal_twi_master.cpp</FilePath>
             </File>
           </Files>
         </Group>

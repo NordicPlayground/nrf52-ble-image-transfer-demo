@@ -76,11 +76,7 @@
 #include "nrf_uarte.h"
 #endif
 
-#include "cl_includes.h"
-#include "cl_system.h"
-#include "cl_hal_gpio.h"
 #include "ArducamMini2MP.h"
-#include "cl_hal_spi.h"
 #include "nrf_delay.h"
 
 #include "nrf_log.h"
@@ -122,6 +118,7 @@ BLE_ADVERTISING_DEF(m_advertising);                                             
 static uint16_t                         m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the ITS service module. */
 static uint8_t                          m_new_command_received = 0;
 static uint8_t                          m_new_resolution, m_new_phy;
+static arducam_mini_2mp_init_t          m_camera_init;
 
 static bool                             m_stream_mode_active = false;
 
@@ -133,11 +130,6 @@ static ble_uuid_t m_adv_uuids[]          =                                      
 {
     {BLE_UUID_ITS_SERVICE, NUS_SERVICE_UUID_TYPE}
 };
-
-using namespace CppLib;
-
-ArducamMini2MP myCamera;
-Button button1(BUTTON_1, true);
 
 enum {APP_CMD_NOCOMMAND = 0, APP_CMD_SINGLE_CAPTURE, APP_CMD_START_STREAM, APP_CMD_STOP_STREAM, 
       APP_CMD_CHANGE_RESOLUTION, APP_CMD_CHANGE_PHY, APP_CMD_SEND_BLE_PARAMS};
@@ -673,17 +665,17 @@ static void camera_init(void)
 			myCamera.pinCsn = 32 + 12;
 	#endif
 #elif defined(BOARD_PCA10040)
-    myCamera.pinScl = 27;
-    myCamera.pinSda = 26;
-    myCamera.pinSck = 25;
-    myCamera.pinMiso = 24;
-    myCamera.pinMosi = 23;
-    myCamera.pinCsn = 22;
+    m_camera_init.pinScl = 27;
+    m_camera_init.pinSda = 26;
+    m_camera_init.pinSck = 25;
+    m_camera_init.pinMiso = 24;
+    m_camera_init.pinMosi = 23;
+    m_camera_init.pinCsn = 22;
 #else
 #error Board not defined or not supported
 #endif    
-    myCamera.open();
-    myCamera.setResolution(OV2640_320x240);
+    arducam_mini_2mp_open(&m_camera_init);
+    arducam_mini_2mp_setResolution(OV2640_320x240);
 }
 
 
@@ -718,13 +710,6 @@ static void advertising_start(void)
 }
 
 
-void cpplibLogFunction(LogSeverity severity, char *module, uint32_t errorCode, char *message)
-{
-    printf("%s - %s\r\n", module, message);
-}
-
-SpiMaster mySpi;
-
 /**@brief Application main function.
  */
 int main(void)
@@ -749,10 +734,7 @@ int main(void)
     
     
     // Start execution.
-    printf("\r\nUART started.\r\n");
-    
-    nrfSystem.setLogHandler(cpplibLogFunction);
-    nrfSystem.setLogDefaultSeverity(LS_DEBUG);
+    //printf("\r\nUART started.\r\n");
     
     NRF_LOG_INFO("Debug logging for UART over RTT started.");
       
@@ -775,18 +757,18 @@ int main(void)
             case APP_CMD_SINGLE_CAPTURE:
                 m_new_command_received = APP_CMD_NOCOMMAND;
                 //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
-                if(myCamera.bytesAvailable() == 0)
+                if(arducam_mini_2mp_bytesAvailable() == 0)
                 {
                     printf("Starting capture...\r\n");
-                    myCamera.startSingleCapture();
-                    image_size = myCamera.bytesAvailable();
+                    arducam_mini_2mp_startSingleCapture();
+                    image_size = arducam_mini_2mp_bytesAvailable();
                     printf("Capture complete: size %i bytes\r\n", (int)(image_size));
                     ble_its_img_info_t image_info;
                     image_info.file_size_bytes = image_size - 1;
                     ble_its_img_info_send(&m_its, &image_info);
                     
                     // Flush the first byte (or the JPG image will be corrupted)
-                    myCamera.fillBuffer(img_data_buffer, 1);
+                    arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
                 }
                 break;
             
@@ -808,27 +790,27 @@ int main(void)
                 switch(m_new_resolution)
                 {
                     case 0:
-                        myCamera.setResolution(OV2640_160x120);
+                        arducam_mini_2mp_setResolution(OV2640_160x120);
                         break;
                     
                     case 1:
-                        myCamera.setResolution(OV2640_320x240);
+                        arducam_mini_2mp_setResolution(OV2640_320x240);
                         break;
 
                     case 2:
-                        myCamera.setResolution(OV2640_640x480);
+                        arducam_mini_2mp_setResolution(OV2640_640x480);
                         break;
 
                     case 3:
-                        myCamera.setResolution(OV2640_800x600);
+                        arducam_mini_2mp_setResolution(OV2640_800x600);
                         break;
 
                     case 4:
-                        myCamera.setResolution(OV2640_1024x768);
+                        arducam_mini_2mp_setResolution(OV2640_1024x768);
                         break;
                     
                     case 5:
-                        myCamera.setResolution(OV2640_1600x1200);
+                        arducam_mini_2mp_setResolution(OV2640_1600x1200);
                         break;
                     
                 } 
@@ -858,26 +840,26 @@ int main(void)
         
         if(m_stream_mode_active)
         {
-            if(img_data_length == 0 && myCamera.bytesAvailable() == 0)
+            if(img_data_length == 0 && arducam_mini_2mp_bytesAvailable() == 0)
             {
-                myCamera.startSingleCapture();
+                arducam_mini_2mp_startSingleCapture();
 
-                image_size = myCamera.bytesAvailable();
+                image_size = arducam_mini_2mp_bytesAvailable();
                 
                 ble_its_img_info_t image_info;
                 image_info.file_size_bytes = image_size - 1;
                 ble_its_img_info_send(&m_its, &image_info);
                 
                 // Flush the first byte (or the JPG image will be corrupted)
-                myCamera.fillBuffer(img_data_buffer, 1);
+                arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
             }
         }
         
-        if(img_data_length > 0 || myCamera.bytesAvailable() > 0)
+        if(img_data_length > 0 || arducam_mini_2mp_bytesAvailable() > 0)
         {
             if(img_data_length == 0)
             {
-                img_data_length = myCamera.fillBuffer(img_data_buffer, m_ble_its_max_data_len);
+                img_data_length = arducam_mini_2mp_fillBuffer(img_data_buffer, m_ble_its_max_data_len);
             }
             if(ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length) == NRF_SUCCESS)
             {

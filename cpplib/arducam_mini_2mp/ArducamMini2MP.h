@@ -7,34 +7,28 @@
 
 typedef enum {ArducamFormatJpeg, ArducamFormatBmp} arducamFormatT;
 
-class ArducamMini2MP
+typedef struct
 {
-private:
-    uint32_t    mBytesLeftInCamera;
-    uint32_t    mAsyncBytesLeft;
-    uint8_t    *mAsyncOutBuffer;
-    
-public:
     uint32_t pinCsn;
     uint32_t pinMosi;
     uint32_t pinMiso;
     uint32_t pinSck;
     uint32_t pinSda;
     uint32_t pinScl;
+}arducam_mini_2mp_init_t;
 
-    ArducamMini2MP();
+// Functions
+void arducam_mini_2mp_init();
 
-    void open();
-    void setResolution(uint32_t res);
-    void setFormat(arducamFormatT format);
-    void startSingleCapture();
-    uint32_t bytesAvailable();
-    uint32_t fillBuffer(uint8_t *buffer, uint32_t bufferSize);
+void arducam_mini_2mp_open();
+void arducam_mini_2mp_setResolution(uint32_t res);
+void arducam_mini_2mp_setFormat(arducamFormatT format);
+void arducam_mini_2mp_startSingleCapture();
+uint32_t arducam_mini_2mp_bytesAvailable();
+uint32_t arducam_mini_2mp_fillBuffer(uint8_t *buffer, uint32_t bufferSize);
 
-    uint32_t asyncFillBuffer(uint8_t *buffer, uint32_t bufferSize);
-    void     onSpiInterrupt(uint32_t txBytes, uint32_t rxBytes);
-    static ArducamMini2MP *activeInstance;
-};
+uint32_t arducam_mini_2mp_asyncFillBuffer(uint8_t *buffer, uint32_t bufferSize);
+void     arducam_mini_2mp_onSpiInterrupt(uint32_t txBytes, uint32_t rxBytes);
 
 bool display_init(void);
 
