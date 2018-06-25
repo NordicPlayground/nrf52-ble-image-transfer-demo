@@ -220,11 +220,9 @@ int arducam_bus_write(int address, int value)
     spi_transfer.rx_length = 0;
     spi_busy = true;
     arducam_CS_LOW();
-        nrf_delay_us(20);
     err_code = nrfx_spim_xfer(&cam_spi, &spi_transfer, 0);
     while(spi_busy);
     arducam_CS_HIGH();
-    nrf_delay_us(50);
     return 1;
 }
 
@@ -239,11 +237,9 @@ uint8_t arducam_bus_read(int address)
     spi_transfer.rx_length = 2;
     spi_busy = true;
     arducam_CS_LOW();
-        nrf_delay_us(20);
     nrfx_spim_xfer(&cam_spi, &spi_transfer, 0);
     while(spi_busy);
     arducam_CS_HIGH();
-        nrf_delay_us(50);
     return rxBuf[1];
 }
 
@@ -326,9 +322,7 @@ void arducam_spiTwiInit()
     spi_config.miso_pin = pinMiso;
     spi_config.mosi_pin = pinMosi;
     spi_config.sck_pin  = pinSck;
-    spi_config.bit_order = 0;
-    spi_config.mode = 0;
-    spi_config.frequency = NRF_SPIM_FREQ_1M;
+    spi_config.frequency = NRF_SPIM_FREQ_4M;
     nrf_gpio_cfg_output(pinCsn);
     nrf_gpio_pin_set(pinCsn);
 
@@ -353,21 +347,6 @@ static void arducam_twi_tx_rx(uint8_t *tx_data, uint32_t tx_len, uint8_t *rx_dat
     twim_xfer_config.type = (rx_len > 0) ? NRFX_TWIM_XFER_TXRX : NRFX_TWIM_XFER_TX;
     twim_busy = true;
     nrfx_twim_xfer(&cam_twi, &twim_xfer_config, (rx_len > 0) ? NRFX_TWIM_FLAG_TX_NO_STOP : 0);
-}
-
-void arducam_spiEnable(bool spiEnable)
-{
-//    if(mSpiMaster.isOpen() == spiEnable) return;
-//    if(spiEnable)
-//    {
-//        mTwiMaster.close();
-//        mSpiMaster.open();
-//    }
-//    else
-//    {
-//        mSpiMaster.close();
-//        mTwiMaster.open();
-//    }
 }
 
 //Reset the FIFO pointer to ZERO

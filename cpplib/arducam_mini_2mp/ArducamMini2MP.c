@@ -116,7 +116,7 @@ void arducam_mini_2mp_startSingleCapture()
         while(!arducam_get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
         
         mBytesLeftInCamera = arducam_read_fifo_length();// - 1;
-        nrf_delay_us(500);
+        //nrf_delay_us(500);
         arducam_CS_LOW();
         arducam_set_fifo_burst();
         //arducam_spiWrite(0);
@@ -178,7 +178,6 @@ uint32_t arducam_mini_2mp_fillBuffer(uint8_t *buffer, uint32_t bufferSize)
         arducam_spiReadMulti(buffer, transactionLength);
         
         buffer += transactionLength;
-        nrf_delay_us(2);
     }
     
     if(mBytesLeftInCamera == 0)

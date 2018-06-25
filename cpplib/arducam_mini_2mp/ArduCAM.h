@@ -341,8 +341,6 @@ typedef void (*arducam_spi_callback_t)(uint32_t tx_bytes, uint32_t rx_bytes);
 void arducam_init(uint8_t model, uint32_t scl, uint32_t sda, uint32_t csn, uint32_t mosi, uint32_t miso, uint32_t sck);
 void arducam_InitCAM(void);
 
-void arducam_spiEnable(bool spiEnable);
-
 void arducam_CS_HIGH(void);
 void arducam_CS_LOW(void);
 uint8_t arducam_spiWrite(uint8_t dataByte);

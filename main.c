@@ -115,7 +115,6 @@ NRF_BLE_GATT_DEF(m_gatt);                                                       
 NRF_BLE_QWR_DEF(m_qwr);                                                             /**< Context for the Queued Write module.*/
 BLE_ADVERTISING_DEF(m_advertising);                                                 /**< Advertising module instance. */
 
-static uint16_t                         m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;  /**< Maximum length of data (in bytes) that can be transmitted to the peer by the ITS service module. */
 static uint8_t                          m_new_command_received = 0;
 static uint8_t                          m_new_resolution, m_new_phy;
 static arducam_mini_2mp_init_t          m_camera_init;
@@ -125,7 +124,7 @@ static bool                             m_stream_mode_active = false;
 static ble_its_ble_params_info_t        m_ble_params_info = {20, 50, 1, 1};
 
 static uint16_t   m_conn_handle          = BLE_CONN_HANDLE_INVALID;                 /**< Handle of the current connection. */
-static uint16_t   m_ble_nus_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
+static uint16_t   m_ble_its_max_data_len = BLE_GATT_ATT_MTU_DEFAULT - 3;            /**< Maximum length of data (in bytes) that can be transmitted to the peer by the Nordic UART service module. */
 static ble_uuid_t m_adv_uuids[]          =                                          /**< Universally unique service identifier. */
 {
     {BLE_UUID_ITS_SERVICE, NUS_SERVICE_UUID_TYPE}
@@ -288,10 +287,16 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 {
     uint32_t err_code;
 
-    if (p_evt->evt_type == BLE_CONN_PARAMS_EVT_FAILED)
+    switch(p_evt->evt_type)
     {
-        err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-        APP_ERROR_CHECK(err_code);
+        case BLE_CONN_PARAMS_EVT_SUCCEEDED:
+            break;
+            
+        case BLE_CONN_PARAMS_EVT_FAILED:
+            err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
+            APP_ERROR_CHECK(err_code);
+            NRF_LOG_ERROR("Conn params failed. Disconnecting...");
+            break;
     }
 }
 
@@ -398,7 +403,17 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             // LED indication will be changed when advertising starts.
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             break;
+            
+        case BLE_GAP_EVT_CONN_PARAM_UPDATE:
+        {
+            uint16_t max_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.max_conn_interval;
+            uint16_t min_con_int = p_ble_evt->evt.gap_evt.params.conn_param_update.conn_params.min_conn_interval;
 
+            m_ble_params_info.con_interval = max_con_int;
+            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
+            NRF_LOG_INFO("Con params updated: CI %i, %i", (int)min_con_int, (int)max_con_int);
+        } break;
+            
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST:
         {
             NRF_LOG_DEBUG("PHY update request.");
@@ -410,6 +425,13 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
             APP_ERROR_CHECK(err_code);
         } break;
+
+        case BLE_GAP_EVT_PHY_UPDATE:
+            m_ble_params_info.tx_phy = p_ble_evt->evt.gap_evt.params.phy_update.tx_phy;
+            m_ble_params_info.rx_phy = p_ble_evt->evt.gap_evt.params.phy_update.rx_phy;    
+            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
+            NRF_LOG_INFO("Phy update: %i, %i", (int)m_ble_params_info.tx_phy, (int)m_ble_params_info.rx_phy);
+            break;
 
         case BLE_GAP_EVT_SEC_PARAMS_REQUEST:
             // Pairing not supported
@@ -439,6 +461,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
         default:
             // No implementation needed.
+            //NRF_LOG_INFO("BLE event not handled by app: %i", p_ble_evt->header.evt_id);
             break;
     }
 }
@@ -475,8 +498,17 @@ void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
 {
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
-        m_ble_nus_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_nus_max_data_len, m_ble_nus_max_data_len);
+        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        m_ble_params_info.mtu = m_ble_its_max_data_len;
+        
+        NRF_LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.", m_ble_its_max_data_len, m_ble_its_max_data_len);
+    }
+    else if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED))
+    {
+        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        m_ble_params_info.mtu = m_ble_its_max_data_len;
+        
+        NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_its_max_data_len, m_ble_its_max_data_len);
     }
     NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
                   p_gatt->att_mtu_desired_central,
@@ -710,6 +742,19 @@ static void advertising_start(void)
 }
 
 
+void conn_evt_len_ext_set(bool status)
+{
+    ret_code_t err_code;
+    ble_opt_t  opt;
+
+    memset(&opt, 0x00, sizeof(opt));
+    opt.common_opt.conn_evt_ext.enable = status ? 1 : 0;
+
+    err_code = sd_ble_opt_set(BLE_COMMON_OPT_CONN_EVT_EXT, &opt);
+    APP_ERROR_CHECK(err_code);
+}
+
+
 /**@brief Application main function.
  */
 int main(void)
@@ -737,9 +782,11 @@ int main(void)
       
     camera_init();
 
-    data_len_ext_set(true);
+    //data_len_ext_set(true);
 
-    gatt_mtu_set(247);
+    //gatt_mtu_set(247);
+    
+    conn_evt_len_ext_set(true);
 
     advertising_start();
 
