@@ -83,7 +83,7 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-#define PCA10056_USE_FRONT_HEADER       1                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
+#define PCA10056_USE_FRONT_HEADER       0                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
@@ -682,19 +682,19 @@ static void camera_init(void)
 {
 #if defined(BOARD_PCA10056)
 	#if(PCA10056_USE_FRONT_HEADER == 1)
-			myCamera.pinScl = 13;
-			myCamera.pinSda = 15;
-			myCamera.pinSck = 21;
-			myCamera.pinMiso = 23;
-			myCamera.pinMosi = 25;
-			myCamera.pinCsn = 32 + 9;
+			m_camera_init.pinScl = 13;
+			m_camera_init.pinSda = 15;
+			m_camera_init.pinSck = 21;
+			m_camera_init.pinMiso = 23;
+			m_camera_init.pinMosi = 25;
+			m_camera_init.pinCsn = 32 + 9;
 	#else
-			myCamera.pinScl = 27;
-			myCamera.pinSda = 26;
-			myCamera.pinSck = 32 + 15;
-			myCamera.pinMiso = 32 + 14;
-			myCamera.pinMosi = 32 + 13;
-			myCamera.pinCsn = 32 + 12;
+			m_camera_init.pinScl = 27;
+			m_camera_init.pinSda = 26;
+			m_camera_init.pinSck = 32 + 15;
+			m_camera_init.pinMiso = 32 + 14;
+			m_camera_init.pinMosi = 32 + 13;
+			m_camera_init.pinCsn = 32 + 12;
 	#endif
 #elif defined(BOARD_PCA10040)
     m_camera_init.pinScl = 27;
