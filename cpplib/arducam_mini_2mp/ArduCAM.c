@@ -322,7 +322,7 @@ void arducam_spiTwiInit()
     spi_config.miso_pin = pinMiso;
     spi_config.mosi_pin = pinMosi;
     spi_config.sck_pin  = pinSck;
-    spi_config.frequency = NRF_SPIM_FREQ_4M;
+    spi_config.frequency = NRF_SPIM_FREQ_1M;
     nrf_gpio_cfg_output(pinCsn);
     nrf_gpio_pin_set(pinCsn);
 
@@ -430,7 +430,7 @@ uint8_t arducam_wrSensorReg8_16(int regID, int regDat)
 uint8_t arducam_rdSensorReg8_16(uint8_t regID, uint16_t* regDat)
 {
     uint8_t rxBuf[2];
-    arducam_twi_tx_rx(regID, 1, rxBuf, 2);
+    arducam_twi_tx_rx(&regID, 1, rxBuf, 2);
     while(twim_busy);
     *regDat = rxBuf[0] << 8 | rxBuf[1];
     nrf_delay_ms(1);
@@ -472,7 +472,6 @@ uint8_t arducam_rdSensorReg16_16(uint16_t regID, uint16_t* regDat)
 {
     uint8_t txBuf[2] = {regID >> 8, regID & 0x00FF};
     uint8_t rxBuf[2];
-    arducam_spiEnable(false);
     arducam_twi_tx_rx(txBuf, 2, rxBuf, 2);
     while(twim_busy);
     *regDat = rxBuf[0] << 8 | rxBuf[1];

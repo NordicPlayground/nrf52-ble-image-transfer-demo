@@ -387,7 +387,6 @@ void arducam_set_format(uint8_t fmt);
 
 void arducam_transferBytes_(uint8_t * out, uint8_t * in, uint8_t size);
 void arducam_transferBytes(uint8_t * out, uint8_t * in, uint32_t size);
-inline void arducam_setDataBits(uint16_t bits);
 
 int arducam_bus_write(int address, int value);
 uint8_t arducam_bus_read(int address);	

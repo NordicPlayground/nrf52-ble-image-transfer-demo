@@ -866,11 +866,8 @@ int main(void)
                 NRF_LOG_INFO("Attempting to change phy.");
                 gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
                 gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-#ifdef S140            
-                sd_ble_gap_phy_request(m_its.conn_handle, &gap_phys_settings);   
-#else            
+        
                 sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
-#endif
                 break;
             
             case APP_CMD_SEND_BLE_PARAMS:

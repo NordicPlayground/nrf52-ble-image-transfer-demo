@@ -85,6 +85,8 @@
       <file file_name="../../../../../../modules/nrfx/drivers/src/prs/nrfx_prs.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_uart.c" />
       <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_uarte.c" />
+      <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_spim.c" />
+      <file file_name="../../../../../../modules/nrfx/drivers/src/nrfx_twim.c" />
     </folder>
     <folder Name="Board Support">
       <file file_name="../../../../../../components/libraries/bsp/bsp.c" />
@@ -112,7 +114,7 @@
       <file file_name="../../../../../../components/ble/nrf_ble_qwr/nrf_ble_qwr.c" />
     </folder>
     <folder Name="nRF_BLE_Services">
-      <file file_name="../../../../../../components/ble/ble_services/ble_nus/ble_nus.c" />
+      <file file_name="../../../ble_image_transfer_service.c" />
     </folder>
     <folder Name="nRF_SoftDevice">
       <file file_name="../../../../../../components/softdevice/common/nrf_sdh.c" />

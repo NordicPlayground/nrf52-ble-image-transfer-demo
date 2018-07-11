@@ -25,6 +25,8 @@
 
 #define BMPIMAGEOFFSET 66
 
+#define SPI_TRANSFER_MAX_LENGTH 240
+
 // set pin 7 as the slave select for the digital pot:
 bool is_header = false;
 int mode = 0;
@@ -108,6 +110,13 @@ void arducam_mini_2mp_startSingleCapture()
 {
     if(mBytesLeftInCamera == 0)
     {
+        while(0)
+        {
+            arducam_CS_LOW();
+            nrf_delay_us(500);
+            arducam_CS_HIGH();
+            nrf_delay_us(500);   
+        }
         arducam_flush_fifo();
         arducam_clear_fifo_flag();
         //Start capture
@@ -116,7 +125,7 @@ void arducam_mini_2mp_startSingleCapture()
         while(!arducam_get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK));
         
         mBytesLeftInCamera = arducam_read_fifo_length();// - 1;
-        //nrf_delay_us(500);
+        nrf_delay_us(500);
         arducam_CS_LOW();
         arducam_set_fifo_burst();
         //arducam_spiWrite(0);
@@ -140,8 +149,8 @@ uint32_t arducam_mini_2mp_asyncFillBuffer(uint8_t *buffer, uint32_t bufferSize)
     mAsyncBytesLeft = (mBytesLeftInCamera > bufferSize ? bufferSize : mBytesLeftInCamera);
     //mBytesLeftInCamera -= mAsyncBytesLeft;
     mAsyncOutBuffer = buffer;
-    arducam_spiReadMulti(mAsyncOutBuffer, (mAsyncBytesLeft > 255 ? 255 : mAsyncBytesLeft));
-    mAsyncOutBuffer += (mAsyncBytesLeft > 255 ? 255 : mAsyncBytesLeft);
+    arducam_spiReadMulti(mAsyncOutBuffer, (mAsyncBytesLeft > SPI_TRANSFER_MAX_LENGTH ? SPI_TRANSFER_MAX_LENGTH : mAsyncBytesLeft));
+    mAsyncOutBuffer += (mAsyncBytesLeft > SPI_TRANSFER_MAX_LENGTH ? SPI_TRANSFER_MAX_LENGTH : mAsyncBytesLeft);
     return mAsyncBytesLeft;
 }
 
@@ -154,8 +163,8 @@ void arducam_mini_2mp_onSpiInterrupt(uint32_t txBytes, uint32_t rxBytes)
         mBytesLeftInCamera -= rxBytes;
         if(mAsyncBytesLeft > 0)
         {
-            arducam_spiReadMulti(mAsyncOutBuffer, (mAsyncBytesLeft > 255 ? 255 : mAsyncBytesLeft));
-            mAsyncOutBuffer += (mAsyncBytesLeft > 255 ? 255 : mAsyncBytesLeft);
+            arducam_spiReadMulti(mAsyncOutBuffer, (mAsyncBytesLeft > SPI_TRANSFER_MAX_LENGTH ? SPI_TRANSFER_MAX_LENGTH : mAsyncBytesLeft));
+            mAsyncOutBuffer += (mAsyncBytesLeft > SPI_TRANSFER_MAX_LENGTH ? SPI_TRANSFER_MAX_LENGTH : mAsyncBytesLeft);
         }
         if(mBytesLeftInCamera == 0)
         {
@@ -174,7 +183,7 @@ uint32_t arducam_mini_2mp_fillBuffer(uint8_t *buffer, uint32_t bufferSize)
     int transactionLength;
     for(int i = 0; i < bytesToRead; i += transactionLength)
     {
-        transactionLength = (bytesToRead - i) > 255 ? 255 : (bytesToRead - i);
+        transactionLength = (bytesToRead - i) > SPI_TRANSFER_MAX_LENGTH ? SPI_TRANSFER_MAX_LENGTH : (bytesToRead - i);
         arducam_spiReadMulti(buffer, transactionLength);
         
         buffer += transactionLength;
