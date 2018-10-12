@@ -14,6 +14,7 @@
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".sdh_state_observers" inputsections="*(SORT(.sdh_state_observers*))" address_symbol="__start_sdh_state_observers" end_symbol="__stop_sdh_state_observers" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".sdh_stack_observers" inputsections="*(SORT(.sdh_stack_observers*))" address_symbol="__start_sdh_stack_observers" end_symbol="__stop_sdh_stack_observers" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".sdh_req_observers" inputsections="*(SORT(.sdh_req_observers*))" address_symbol="__start_sdh_req_observers" end_symbol="__stop_sdh_req_observers" />
+    <ProgramSection alignment="4" keep="Yes" load="Yes" name=".log_backends" inputsections="*(SORT(.log_backends*))" address_symbol="__start_log_backends" end_symbol="__stop_log_backends" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".nrf_queue" inputsections="*(.nrf_queue*)" address_symbol="__start_nrf_queue" end_symbol="__stop_nrf_queue" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".cli_command" inputsections="*(.cli_command*)" address_symbol="__start_cli_command" end_symbol="__stop_cli_command" />
     <ProgramSection alignment="4" keep="Yes" load="Yes" name=".crypto_data" inputsections="*(SORT(.crypto_data*))" address_symbol="__start_crypto_data" end_symbol="__stop_crypto_data" />
