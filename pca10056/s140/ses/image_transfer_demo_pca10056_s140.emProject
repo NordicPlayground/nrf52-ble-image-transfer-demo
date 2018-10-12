@@ -1,6 +1,6 @@
 <!DOCTYPE CrossStudio_Project_File>
-<solution Name="ble_app_uart_pca10056_s140" target="8" version="2">
-  <project Name="ble_app_uart_pca10056_s140">
+<solution Name="image_transfer_demo_pca10056_s140" target="8" version="2">
+  <project Name="image_transfer_demo_pca10056_s140">
     <configuration
       Name="Common"
       arm_architecture="v7EM"

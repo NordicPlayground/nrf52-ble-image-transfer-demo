@@ -21,15 +21,15 @@
   <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="ble_app_uart_pca10056_s140" radix="16" sizeText="" addressText=""/>
  </Memory4>
  <Project>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;Application"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;None"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;nRF_Libraries"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;nRF_Log"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;nRF_Segger_RTT"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;nRF_SoftDevice"/>
-  <ProjectSessionItem path="ble_app_uart_pca10056_s140;ble_app_uart_pca10056_s140;Segger Startup Files"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;Application"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;None"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Libraries"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Log"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Segger_RTT"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_SoftDevice"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;Segger Startup Files"/>
  </Project>
  <Register1>
   <RegisterWindow visibleNodes="CPU - Current Context/r0;CPU - Current Context/r1;CPU - Current Context/r2;CPU - Current Context/r3;CPU - Current Context/r4;CPU - Current Context/r5;CPU - Current Context/r6;CPU - Current Context/r7;CPU - Current Context/r8;CPU - Current Context/r9;CPU - Current Context/r10;CPU - Current Context/r11;CPU - Current Context/r12;CPU - Current Context/sp(r13);CPU - Current Context/lr(r14);CPU - Current Context/pc(r15);CPU - Current Context/apsr;CPU/r0;CPU/r1;CPU/r2;CPU/r3;CPU/r4;CPU/r5;CPU/r6;CPU/r7;CPU/r8;CPU/r9;CPU/r10;CPU/r11;CPU/r12;CPU/sp(r13);CPU/lr(r14);CPU/pc(r15);CPU/xpsr;CPU/msp;CPU/psp;CPU/cfbp" binaryNodes="" asciiNodes="" openNodes="CPU - Current Context" name="ble_app_uart_pca10056_s140" decimalNodes="" octalNodes="" unsignedNodes=""/>
@@ -62,11 +62,11 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="20" y="755" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="0" top="716" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="755" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="860" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="41" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/util/app_error_weak.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="53" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/log/nrf_log_backend_interface.h" selected="0" top="15" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="138" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/log/src/nrf_log_frontend.c" selected="0" top="94" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="7367" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="1" top="7346" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="7367" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="7346" codecName="Default"/>
  </Files>
  <ARMCrossStudioWindow activeProject="ble_app_uart_pca10056_s140" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Nordic_Semiconductor/nRF5_SDK_15.2.0/components/libraries/ringbuf" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>
