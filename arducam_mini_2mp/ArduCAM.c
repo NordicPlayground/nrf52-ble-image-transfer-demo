@@ -322,7 +322,7 @@ void arducam_spiTwiInit()
     spi_config.miso_pin = pinMiso;
     spi_config.mosi_pin = pinMosi;
     spi_config.sck_pin  = pinSck;
-    spi_config.frequency = NRF_SPIM_FREQ_1M;
+    spi_config.frequency = NRF_SPIM_FREQ_4M;
     nrf_gpio_cfg_output(pinCsn);
     nrf_gpio_pin_set(pinCsn);
 

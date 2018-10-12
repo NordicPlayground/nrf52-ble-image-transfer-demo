@@ -43,6 +43,7 @@
 #include "ble_image_transfer_service.h"
 #include "ble_srv_common.h"
 #include "ble.h"
+#include "nrf_gpio.h"
 
 #define BLE_UUID_ITS_TX_CHARACTERISTIC 0x0003                      /**< The UUID of the TX Characteristic. */
 #define BLE_UUID_ITS_RX_CHARACTERISTIC 0x0002                      /**< The UUID of the RX Characteristic. */
@@ -58,6 +59,45 @@
 volatile uint32_t file_size = 0, file_pos = 0, m_max_data_length = 20;
 uint8_t * file_data;
 ble_its_t * m_its;
+
+#define ITS_ENABLE_PIN_DEBUGGING 0
+
+#if(ITS_ENABLE_PIN_DEBUGGING == 1)
+#define ITS_DEBUG_PIN_SET(_pin) nrf_gpio_pin_set(DBG_PIN_ ## _pin)
+#define ITS_DEBUG_PIN_CLR(_pin) nrf_gpio_pin_clear(DBG_PIN_ ## _pin)
+#else
+#define ITS_DEBUG_PIN_SET(_pin) 
+#define ITS_DEBUG_PIN_CLR(_pin) 
+#endif
+
+static void its_enable_gpio_debug(void)
+{
+#if(ITS_ENABLE_PIN_DEBUGGING == 1)
+    nrf_gpio_cfg_output(DBG_PIN_0);
+    nrf_gpio_cfg_output(DBG_PIN_1);
+    nrf_gpio_cfg_output(DBG_PIN_2);
+    
+    // Configure two GPIO's to signal TX and RX activity on the radio, for debugging throughput issues on different phones
+    NRF_GPIOTE->CONFIG[0] = GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos |
+                            GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos | 
+                            DBG_PIN_3 << GPIOTE_CONFIG_PSEL_Pos;
+    NRF_GPIOTE->CONFIG[1] = GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos |
+                            GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos | 
+                            DBG_PIN_4 << GPIOTE_CONFIG_PSEL_Pos;
+    
+    NRF_PPI->CH[0].EEP = (uint32_t)&NRF_RADIO->EVENTS_TXREADY;
+    NRF_PPI->CH[0].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[0];
+    
+    NRF_PPI->CH[1].EEP = (uint32_t)&NRF_RADIO->EVENTS_RXREADY;
+    NRF_PPI->CH[1].TEP = (uint32_t)&NRF_GPIOTE->TASKS_SET[1];
+    
+    NRF_PPI->CH[2].EEP = (uint32_t)&NRF_RADIO->EVENTS_DISABLED;
+    NRF_PPI->CH[2].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[0];
+    NRF_PPI->FORK[2].TEP = (uint32_t)&NRF_GPIOTE->TASKS_CLR[1];
+    
+    NRF_PPI->CHENSET = 0x07;
+#endif
+}
 
 
 /**@brief Function for handling the @ref BLE_GAP_EVT_CONNECTED event from the S110 SoftDevice.
@@ -314,23 +354,26 @@ static uint32_t push_data_packets()
 {
     uint32_t return_code = NRF_SUCCESS;
     uint32_t packet_length = m_max_data_length;
+    uint32_t packet_size = 0;
+    ITS_DEBUG_PIN_SET(1);
     while(return_code == NRF_SUCCESS)
     {
         if((file_size - file_pos) > packet_length)
         {
-            return_code = ble_its_string_send(m_its, &file_data[file_pos], packet_length);
-            if(return_code == NRF_SUCCESS)
-            {
-                file_pos += packet_length;
-            }
+            packet_size = packet_length;
         }
         else if((file_size - file_pos) > 0)
         {
-            return_code = ble_its_string_send(m_its, &file_data[file_pos], file_size - file_pos);           
+            packet_size = file_size - file_pos;
+        }
+        
+        if(packet_size > 0)
+        {
+            return_code = ble_its_string_send(m_its, &file_data[file_pos], packet_size);
             if(return_code == NRF_SUCCESS)
             {
-                file_pos = file_size;
-            }
+                file_pos += packet_size;
+            }   
         }
         else
         {
@@ -338,9 +381,11 @@ static uint32_t push_data_packets()
             break;
         }
     }
+    ITS_DEBUG_PIN_CLR(1);
     return return_code;
 }
 
+static volatile bool nrf_error_resources = false;
 
 void ble_its_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
 {
@@ -366,9 +411,16 @@ void ble_its_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context)
             break;
 
         case BLE_GATTS_EVT_HVN_TX_COMPLETE:
-            if(file_size > 0)
             {
-                push_data_packets();
+                //uint32_t count = p_ble_evt->evt.gatts_evt.params.hvn_tx_complete.count;
+                ITS_DEBUG_PIN_SET(2);
+                ITS_DEBUG_PIN_CLR(1);
+                if(file_size > 0)
+                {
+                    push_data_packets();
+                }
+                ITS_DEBUG_PIN_CLR(2);
+                nrf_error_resources = false;
             }
             break;
             
@@ -420,6 +472,7 @@ uint32_t ble_its_init(ble_its_t * p_its, const ble_its_init_t * p_its_init)
     err_code = img_info_char_add(p_its, p_its_init);
     VERIFY_SUCCESS(err_code);
 
+    its_enable_gpio_debug();
     return NRF_SUCCESS;
 }
 
@@ -427,6 +480,14 @@ uint32_t ble_its_init(ble_its_t * p_its, const ble_its_init_t * p_its_init)
 uint32_t ble_its_string_send(ble_its_t * p_its, uint8_t * p_string, uint16_t length)
 {
     ble_gatts_hvx_params_t hvx_params;
+    uint32_t err_code;
+    ITS_DEBUG_PIN_SET(0);
+
+    if(nrf_error_resources)
+    {
+        ITS_DEBUG_PIN_CLR(0);
+        return NRF_ERROR_RESOURCES;
+    }
 
     VERIFY_PARAM_NOT_NULL(p_its);
 
@@ -441,13 +502,21 @@ uint32_t ble_its_string_send(ble_its_t * p_its, uint8_t * p_string, uint16_t len
     }
 
     memset(&hvx_params, 0, sizeof(hvx_params));
-
     hvx_params.handle = p_its->tx_handles.value_handle;
     hvx_params.p_data = p_string;
     hvx_params.p_len  = &length;
     hvx_params.type   = BLE_GATT_HVX_NOTIFICATION;
+    
+    err_code = sd_ble_gatts_hvx(p_its->conn_handle, &hvx_params);
 
-    return sd_ble_gatts_hvx(p_its->conn_handle, &hvx_params);
+    if(err_code == NRF_ERROR_RESOURCES)
+    {
+        nrf_error_resources = true;
+        ITS_DEBUG_PIN_SET(1);
+    }
+    ITS_DEBUG_PIN_CLR(0);
+    //NRF_LOG_INFO("NOT - Len: %i, err_code: %i", length, err_code);
+    return err_code;
 }
 
 uint32_t ble_its_ble_params_info_send(ble_its_t * p_its, ble_its_ble_params_info_t * ble_params_info)

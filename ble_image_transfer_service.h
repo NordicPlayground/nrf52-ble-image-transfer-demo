@@ -100,7 +100,11 @@ extern "C" {
     #warning NRF_BLE_GATT_MAX_MTU_SIZE is not defined.
 #endif
 
-
+#define DBG_PIN_0 14
+#define DBG_PIN_1 15
+#define DBG_PIN_2 16
+#define DBG_PIN_3 3
+#define DBG_PIN_4 4
 
 
 /* Forward declaration of the ble_its_t type. */

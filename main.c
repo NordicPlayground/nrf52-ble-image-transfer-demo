@@ -96,8 +96,8 @@
 
 #define APP_ADV_DURATION                18000                                       /**< The advertising duration (180 seconds) in units of 10 milliseconds. */
 
-#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8,  UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
-#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(12, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(15, UNIT_1_25_MS)             /**< Minimum acceptable connection interval (20 ms), Connection interval uses 1.25 ms units. */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(15, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (75 ms), Connection interval uses 1.25 ms units. */
 #define SLAVE_LATENCY                   0                                           /**< Slave latency. */
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds), Supervision Timeout uses 10 ms units. */
 #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000)                       /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
@@ -149,6 +149,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
+
 /**@brief Function for initializing the timer module.
  */
 static void timers_init(void)
@@ -156,6 +157,7 @@ static void timers_init(void)
     ret_code_t err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 }
+
 
 /**@brief Function for the GAP initialization.
  *
@@ -184,6 +186,14 @@ static void gap_params_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
+    
+#if 0
+    ble_gap_addr_t ble_address = {.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC,
+                                  .addr_id_peer = 0,
+                                  .addr = {0xC3,0x11,0x99,0x33,0x44,0xFF}};
+    err_code = sd_ble_gap_addr_set(&ble_address);
+    APP_ERROR_CHECK(err_code);
+#endif
 }
 
 
@@ -211,7 +221,6 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 /**@snippet [Handling the data received over BLE] */
 static void its_data_handler(ble_its_t * p_its, uint8_t const * p_data, uint16_t length)
 {
-   
     switch(p_data[0])
     {
         // Take picture
@@ -293,9 +302,9 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
             break;
             
         case BLE_CONN_PARAMS_EVT_FAILED:
-            err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
-            APP_ERROR_CHECK(err_code);
-            NRF_LOG_ERROR("Conn params failed. Disconnecting...");
+            //err_code = sd_ble_gap_disconnect(m_conn_handle, BLE_HCI_CONN_INTERVAL_UNACCEPTABLE);
+            //APP_ERROR_CHECK(err_code);
+            NRF_LOG_ERROR("Conn params failed. Keep the connection anyway..");
             break;
     }
 }
@@ -334,24 +343,6 @@ static void conn_params_init(void)
 }
 
 
-/**@brief Function for putting the chip into sleep mode.
- *
- * @note This function will not return.
- */
-static void sleep_mode_enter(void)
-{
-    uint32_t err_code = bsp_indication_set(BSP_INDICATE_IDLE);
-    APP_ERROR_CHECK(err_code);
-
-    // Prepare wakeup buttons.
-    err_code = bsp_btn_ble_sleep_mode_prepare();
-    APP_ERROR_CHECK(err_code);
-
-    // Go to system-off mode (this function will not return; wakeup will cause a reset).
-    err_code = sd_power_system_off();
-    APP_ERROR_CHECK(err_code);
-}
-
 
 /**@brief Function for handling advertising events.
  *
@@ -370,7 +361,9 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             APP_ERROR_CHECK(err_code);
             break;
         case BLE_ADV_EVT_IDLE:
-            sleep_mode_enter();
+            NRF_LOG_INFO("BLE_ADV_EVT_IDLE...");
+            err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+            APP_ERROR_CHECK(err_code);
             break;
         default:
             break;
@@ -496,23 +489,26 @@ static void ble_stack_init(void)
 /**@brief Function for handling events from the GATT library. */
 void gatt_evt_handler(nrf_ble_gatt_t * p_gatt, nrf_ble_gatt_evt_t const * p_evt)
 {
+    uint32_t data_length;
     if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_ATT_MTU_UPDATED))
     {
-        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
-        m_ble_params_info.mtu = m_ble_its_max_data_len;
+        data_length = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        //m_ble_params_info.mtu = m_ble_its_max_data_len;
         
-        NRF_LOG_INFO("ATT MTU exchange completed. MTU set to %u bytes.", m_ble_its_max_data_len, m_ble_its_max_data_len);
+        NRF_LOG_INFO("gatt_event: ATT MTU is set to 0x%X (%d)", data_length, data_length);
     }
     else if ((m_conn_handle == p_evt->conn_handle) && (p_evt->evt_id == NRF_BLE_GATT_EVT_DATA_LENGTH_UPDATED))
     {
-        m_ble_its_max_data_len = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH;
+        data_length = p_evt->params.att_mtu_effective - OPCODE_LENGTH - HANDLE_LENGTH - 4;
+        m_ble_its_max_data_len = data_length;
         m_ble_params_info.mtu = m_ble_its_max_data_len;
+        ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
         
-        NRF_LOG_INFO("Data len is set to 0x%X(%d)", m_ble_its_max_data_len, m_ble_its_max_data_len);
+        NRF_LOG_INFO("gatt_event: Data len is set to 0x%X (%d)", data_length, data_length);
     }
-    NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
-                  p_gatt->att_mtu_desired_central,
-                  p_gatt->att_mtu_desired_periph);
+    //NRF_LOG_DEBUG("ATT MTU exchange completed. central 0x%x peripheral 0x%x",
+      //            p_gatt->att_mtu_desired_central,
+        //        p_gatt->att_mtu_desired_periph);
 }
 
 
@@ -525,6 +521,9 @@ void gatt_init(void)
     APP_ERROR_CHECK(err_code);
 
     err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, NRF_SDH_BLE_GATT_MAX_MTU_SIZE);
+    APP_ERROR_CHECK(err_code);
+    
+    err_code = nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, NRF_SDH_BLE_GAP_DATA_LENGTH);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -539,7 +538,6 @@ void bsp_event_handler(bsp_event_t event)
     switch (event)
     {
         case BSP_EVENT_SLEEP:
-            sleep_mode_enter();
             break;
 
         case BSP_EVENT_DISCONNECT:
@@ -645,7 +643,7 @@ static void advertising_init(void)
  *
  * @param[out] p_erase_bonds  Will be true if the clear bonding button was pressed to wake the application up.
  */
-static void buttons_leds_init(bool * p_erase_bonds)
+static void buttons_leds_init(void)
 {
     bsp_event_t startup_event;
 
@@ -654,8 +652,6 @@ static void buttons_leds_init(bool * p_erase_bonds)
 
     err_code = bsp_btn_ble_init(NULL, &startup_event);
     APP_ERROR_CHECK(err_code);
-
-    *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
 }
 
 
@@ -728,7 +724,7 @@ static void log_init(void)
  */
 static void idle_state_handle(void)
 {
-    UNUSED_RETURN_VALUE(NRF_LOG_PROCESS());
+    while(NRF_LOG_PROCESS());
     sd_app_evt_wait();
 }
 
@@ -754,6 +750,14 @@ void conn_evt_len_ext_set(bool status)
     APP_ERROR_CHECK(err_code);
 }
 
+void data_len_set(uint8_t value)
+{
+    ret_code_t err_code;
+    err_code = nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, value);
+    APP_ERROR_CHECK(err_code);
+
+}
+
 
 /**@brief Application main function.
  */
@@ -762,13 +766,11 @@ int main(void)
     uint32_t img_data_length = 0;
     uint8_t img_data_buffer[255];
     
-    bool erase_bonds;
-
     // Initialize.
     uart_init();
     log_init();
     timers_init();
-    buttons_leds_init(&erase_bonds);
+    buttons_leds_init();
     ble_stack_init();
     gap_params_init();
     gatt_init();
@@ -782,12 +784,6 @@ int main(void)
       
     camera_init();
 
-    //data_len_ext_set(true);
-
-    //gatt_mtu_set(247);
-    
-    conn_evt_len_ext_set(true);
-
     advertising_start();
 
     // Enter main loop.
@@ -795,88 +791,83 @@ int main(void)
     {
         uint32_t image_size;
         ble_gap_phys_t gap_phys_settings;    
-
-        switch(m_new_command_received)
-        {
-            case APP_CMD_SINGLE_CAPTURE:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                //ble_its_send_file(&m_its, test_file, TEST_FILE_SIZE);
-                if(arducam_mini_2mp_bytesAvailable() == 0)
-                {
-                    NRF_LOG_INFO("Starting capture...");
-                    arducam_mini_2mp_startSingleCapture();
-                    image_size = arducam_mini_2mp_bytesAvailable();
-                    NRF_LOG_INFO("Capture complete: size %i bytes", (int)(image_size));
-                    ble_its_img_info_t image_info;
-                    image_info.file_size_bytes = image_size - 1;
-                    ble_its_img_info_send(&m_its, &image_info);
-                    
-                    // Flush the first byte (or the JPG image will be corrupted)
-                    arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
-                }
-                break;
-            
-            case APP_CMD_START_STREAM:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-
-                NRF_LOG_INFO("Stream mode enabled");                
-                break;
-                
-            case APP_CMD_STOP_STREAM:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                m_stream_mode_active = false;
-                NRF_LOG_INFO("Stream mode disabled");
-                break;
-                
-            case APP_CMD_CHANGE_RESOLUTION:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                NRF_LOG_INFO("Change resolution to mode: %i", (int)m_new_resolution);
-                switch(m_new_resolution)
-                {
-                    case 0:
-                        arducam_mini_2mp_setResolution(OV2640_160x120);
-                        break;
-                    
-                    case 1:
-                        arducam_mini_2mp_setResolution(OV2640_320x240);
-                        break;
-
-                    case 2:
-                        arducam_mini_2mp_setResolution(OV2640_640x480);
-                        break;
-
-                    case 3:
-                        arducam_mini_2mp_setResolution(OV2640_800x600);
-                        break;
-
-                    case 4:
-                        arducam_mini_2mp_setResolution(OV2640_1024x768);
-                        break;
-                    
-                    case 5:
-                        arducam_mini_2mp_setResolution(OV2640_1600x1200);
-                        break;
-                    
-                } 
-                break;
-                
-            case APP_CMD_CHANGE_PHY:   
-                m_new_command_received = APP_CMD_NOCOMMAND;
-            
-                NRF_LOG_INFO("Attempting to change phy.");
-                gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
-                gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
         
-                sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
-                break;
+        if(m_new_command_received != APP_CMD_NOCOMMAND)
+        {
+            uint32_t new_command = m_new_command_received;
+            m_new_command_received = APP_CMD_NOCOMMAND;
+            switch(new_command)
+            {
+                case APP_CMD_SINGLE_CAPTURE:
+                    if(arducam_mini_2mp_bytesAvailable() == 0)
+                    {
+                        NRF_LOG_INFO("Starting capture...");
+                        arducam_mini_2mp_startSingleCapture();
+                        image_size = arducam_mini_2mp_bytesAvailable();
+                        NRF_LOG_INFO("Capture complete: size %i bytes", (int)(image_size));
+                        ble_its_img_info_t image_info;
+                        image_info.file_size_bytes = image_size - 1;
+                        ble_its_img_info_send(&m_its, &image_info);
+                    
+                        // Flush the first byte (or the JPG image will be corrupted)
+                        arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
+                    }
+                    break;
             
-            case APP_CMD_SEND_BLE_PARAMS:
-                m_new_command_received = APP_CMD_NOCOMMAND;
-                ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
-                break;
+                case APP_CMD_START_STREAM:
+                    NRF_LOG_INFO("Stream mode enabled");                
+                    break;
+                
+                case APP_CMD_STOP_STREAM:
+                    NRF_LOG_INFO("Stream mode disabled");
+                    break;
+                
+                case APP_CMD_CHANGE_RESOLUTION:
+                    NRF_LOG_INFO("Change resolution to mode: %i", (int)m_new_resolution);
+                    switch(m_new_resolution)
+                    {
+                        case 0:
+                            arducam_mini_2mp_setResolution(OV2640_160x120);
+                            break;
+                    
+                        case 1:
+                            arducam_mini_2mp_setResolution(OV2640_320x240);
+                            break;
+
+                        case 2:
+                            arducam_mini_2mp_setResolution(OV2640_640x480);
+                            break;
+
+                        case 3:
+                            arducam_mini_2mp_setResolution(OV2640_800x600);
+                            break;
+
+                        case 4:
+                            arducam_mini_2mp_setResolution(OV2640_1024x768);
+                            break;
+                    
+                        case 5:
+                            arducam_mini_2mp_setResolution(OV2640_1600x1200);
+                            break;
+                    
+                    } 
+                    break;
+                
+                case APP_CMD_CHANGE_PHY:   
+                    NRF_LOG_INFO("Attempting to change phy.");
+                    gap_phys_settings.tx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+                    gap_phys_settings.rx_phys = (m_new_phy == 0 ? BLE_GAP_PHY_1MBPS : BLE_GAP_PHY_2MBPS);  
+        
+                    sd_ble_gap_phy_update(m_its.conn_handle, &gap_phys_settings);  
+                    break;
             
-            default:
-                break;
+                case APP_CMD_SEND_BLE_PARAMS:
+                    ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
+                    break;
+            
+                default:
+                    break;
+            }
         }
         
         if(m_stream_mode_active)
@@ -898,14 +889,19 @@ int main(void)
         
         if(img_data_length > 0 || arducam_mini_2mp_bytesAvailable() > 0)
         {
-            if(img_data_length == 0)
+            uint32_t ret_code;
+            do
             {
-                img_data_length = arducam_mini_2mp_fillBuffer(img_data_buffer, m_ble_its_max_data_len);
-            }
-            if(ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length) == NRF_SUCCESS)
-            {
-                img_data_length = 0;
-            }                
+                if(img_data_length == 0)
+                {
+                    img_data_length = arducam_mini_2mp_fillBuffer(img_data_buffer, m_ble_its_max_data_len);
+                }
+                ret_code = ble_its_send_file_fragment(&m_its, img_data_buffer, img_data_length);
+                if(ret_code == NRF_SUCCESS)
+                {
+                    img_data_length = 0;
+                }  
+            }while(ret_code == NRF_SUCCESS);    
         }
         
         if(m_new_command_received == APP_CMD_NOCOMMAND)
