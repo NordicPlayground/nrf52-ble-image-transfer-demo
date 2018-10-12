@@ -18,13 +18,13 @@ typedef struct
 }arducam_mini_2mp_init_t;
 
 // Functions
-void arducam_mini_2mp_init();
+void arducam_mini_2mp_init(void);
 
-void arducam_mini_2mp_open();
+void arducam_mini_2mp_open(arducam_mini_2mp_init_t *config);
 void arducam_mini_2mp_setResolution(uint32_t res);
 void arducam_mini_2mp_setFormat(arducamFormatT format);
-void arducam_mini_2mp_startSingleCapture();
-uint32_t arducam_mini_2mp_bytesAvailable();
+void arducam_mini_2mp_startSingleCapture(void);
+uint32_t arducam_mini_2mp_bytesAvailable(void);
 uint32_t arducam_mini_2mp_fillBuffer(uint8_t *buffer, uint32_t bufferSize);
 
 uint32_t arducam_mini_2mp_asyncFillBuffer(uint8_t *buffer, uint32_t bufferSize);

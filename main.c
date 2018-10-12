@@ -83,11 +83,11 @@
 #include "nrf_log_ctrl.h"
 #include "nrf_log_default_backends.h"
 
-#define PCA10056_USE_FRONT_HEADER       0                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
+#define PCA10056_USE_FRONT_HEADER       0                                            /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
-#define DEVICE_NAME                     "Nordic_IMAGE"                              /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME                     "Camera Demo v2"                            /**< Name of device. Will be included in the advertising data. */
 #define NUS_SERVICE_UUID_TYPE           BLE_UUID_TYPE_VENDOR_BEGIN                  /**< UUID type for the Nordic UART Service (vendor specific). */
 
 #define APP_BLE_OBSERVER_PRIO           3                                           /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -294,8 +294,6 @@ static void services_init(void)
  */
 static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
 {
-    uint32_t err_code;
-
     switch(p_evt->evt_type)
     {
         case BLE_CONN_PARAMS_EVT_SUCCEEDED:
@@ -651,25 +649,6 @@ static void buttons_leds_init(void)
     APP_ERROR_CHECK(err_code);
 
     err_code = bsp_btn_ble_init(NULL, &startup_event);
-    APP_ERROR_CHECK(err_code);
-}
-
-
-static void data_len_ext_set(bool status)
-{
-    uint8_t data_length = status ? (247 + 4) : (23 + 4);
-    (void) nrf_ble_gatt_data_length_set(&m_gatt, BLE_CONN_HANDLE_INVALID, data_length);
-}
-
-
-static void gatt_mtu_set(uint16_t att_mtu)
-{
-    ret_code_t err_code;
-
-    err_code = nrf_ble_gatt_att_mtu_periph_set(&m_gatt, att_mtu);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = nrf_ble_gatt_att_mtu_central_set(&m_gatt, att_mtu);
     APP_ERROR_CHECK(err_code);
 }
 

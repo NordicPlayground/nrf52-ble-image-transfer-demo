@@ -62,7 +62,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="799" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="798" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="764" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="867" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="11429" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="11386" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="45" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/ble/nrf_ble_gatt/nrf_ble_gatt.c" selected="0" top="67" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="98" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/util/app_error_weak.c" selected="0" top="47" codecName="Default"/>
@@ -79,5 +79,5 @@
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="97" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/softdevice/s132/headers/ble_gatts.h" selected="0" top="67" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../arducam_mini_2mp/ArducamMini2MP.c" selected="0" top="24" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ble_app_uart_pca10040_s132" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Nordic Semiconductor/nRF5_SDK_15.0.0_a53641a/examples/_too/nrf52-ble-image-transfer-demo/arducam_mini_2mp" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <ARMCrossStudioWindow activeProject="ble_app_uart_pca10040_s132" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Nordic Semiconductor/nRF5_SDK_15.0.0_a53641a/examples/_too/nrf52-ble-image-transfer-demo/arducam_mini_2mp" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

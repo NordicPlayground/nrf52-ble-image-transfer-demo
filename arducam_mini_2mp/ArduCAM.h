@@ -129,7 +129,6 @@
 
 #define regtype volatile uint32_t
 #define regsize uint32_t
-#define PROGMEM
 
     #define pgm_read_byte(x)        (*((char *)x))
 //  #define pgm_read_word(x)        (*((short *)(x & 0xfffffffe)))
@@ -393,60 +392,8 @@ uint8_t arducam_bus_read(int address);
         
 void arducam_spiTwiInit(void);
 
-#if defined OV7660_CAM	
-	#include "ov7660_regs.h"
-#endif
-
-#if defined OV7725_CAM	
-	#include "ov7725_regs.h"
-#endif
-
-#if defined OV7670_CAM	
-	#include "ov7670_regs.h"
-#endif
-
-#if defined OV7675_CAM
-	#include "ov7675_regs.h"
-#endif
-
-#if ( defined(OV5642_CAM) || defined(OV5642_MINI_5MP) || defined(OV5642_MINI_5MP_BIT_ROTATION_FIXED) || defined(OV5642_MINI_5MP_PLUS) )	
-	#include "ov5642_regs.h"
-#endif
-
-#if defined OV3640_CAM	
-	#include "ov3640_regs.h"
-#endif
-
 #if (defined(OV2640_CAM) || defined(OV2640_MINI_2MP))
 	#include "ov2640_regs.h"
-#endif
-
-#if defined MT9D111_CAM	
-	#include "mt9d111_regs.h"
-#endif
-
-#if defined MT9M112_CAM	
-	#include "mt9m112_regs.h"
-#endif
-
-#if defined MT9V111_CAM	
-	#include "mt9v111_regs.h"
-#endif
-
-#if ( defined(OV5640_CAM)	|| defined(OV5640_MINI_5MP_PLUS) )
-	#include "ov5640_regs.h"
-#endif
-
-#if defined MT9M001_CAM	
-	#include "mt9m001_regs.h"
-#endif
-
-#if defined MT9T112_CAM	
-	#include "mt9t112_regs.h"
-#endif
-
-#if defined MT9D112_CAM	
-	#include "mt9d112_regs.h"
 #endif
 
 #endif
