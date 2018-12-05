@@ -387,11 +387,15 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
             APP_ERROR_CHECK(err_code);
+            ble_its_ble_params_info_send(&m_its, &m_ble_params_info);
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
             NRF_LOG_INFO("Disconnected");
             // LED indication will be changed when advertising starts.
+            m_stream_mode_active = false;
+            m_new_command_received = APP_CMD_CHANGE_RESOLUTION;
+            m_new_resolution = 1;
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             break;
             
