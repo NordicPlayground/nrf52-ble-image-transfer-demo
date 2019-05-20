@@ -85,7 +85,7 @@
 
 #define PCA10056_USE_FRONT_HEADER       0                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
 
-#define ARDUCAM_MINI_2MP_PLUS_MODE      1                                           /**< The newer plus version of the Arducam module operates slightly different to the non plus version, and this define must be set accordingly. */
+#define ARDUCAM_MINI_2MP_PLUS_MODE      0                                           /**< The newer plus version of the Arducam module operates slightly different to the non plus version, and this define must be set accordingly. */
 
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
