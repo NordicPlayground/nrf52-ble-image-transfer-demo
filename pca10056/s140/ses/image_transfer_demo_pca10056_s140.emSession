@@ -1,9 +1,7 @@
 <!DOCTYPE CrossStudio_Session_File>
 <session>
  <Bookmarks/>
- <Breakpoints groups="Breakpoints" active_group="Breakpoints">
-  <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
- </Breakpoints>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints"/>
  <ExecutionProfileWindow/>
  <FrameBufferWindow>
   <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
@@ -25,6 +23,7 @@
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140"/>
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;Application"/>
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;None"/>
+  <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Drivers"/>
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Libraries"/>
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Log"/>
   <ProjectSessionItem path="image_transfer_demo_pca10056_s140;image_transfer_demo_pca10056_s140;nRF_Segger_RTT"/>
@@ -62,11 +61,7 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="755" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="860" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="41" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/util/app_error_weak.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="53" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/log/nrf_log_backend_interface.h" selected="0" top="15" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="138" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../../../../components/libraries/log/src/nrf_log_frontend.c" selected="0" top="94" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="7367" useTextEdit="1" useBinaryEdit="0" left="0" path="../config/sdk_config.h" selected="0" top="7346" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="113" useTextEdit="1" useBinaryEdit="0" left="0" path="../../../main.c" selected="1" top="55" codecName="Default"/>
  </Files>
- <ARMCrossStudioWindow activeProject="ble_app_uart_pca10056_s140" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" debugSearchFileMap="" fileDialogInitialDirectory="C:/Nordic_Semiconductor/nRF5_SDK_15.2.0/components/libraries/ringbuf" debugSearchPath="" autoConnectCapabilities="3199"/>
+ <ARMCrossStudioWindow activeProject="image_transfer_demo_pca10056_s140" fileDialogDefaultFilter="*.c" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Nordic_Semiconductor/nRF5_SDK_15.2.0/components/libraries/ringbuf" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>
