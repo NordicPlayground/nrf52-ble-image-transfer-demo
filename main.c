@@ -85,8 +85,6 @@
 
 #define PCA10056_USE_FRONT_HEADER       0                                           /**< Use the front header (P24) for the camera module. Requires SB10-15 and SB20-25 to be soldered/cut, as described in the readme. */
 
-#define ARDUCAM_MINI_2MP_PLUS_MODE      0                                           /**< The newer plus version of the Arducam module operates slightly different to the non plus version, and this define must be set accordingly. */
-
 #define APP_BLE_CONN_CFG_TAG            1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
 #define DEVICE_NAME                     "Camera Demo v2"                            /**< Name of device. Will be included in the advertising data. */
@@ -792,13 +790,6 @@ int main(void)
                         NRF_LOG_INFO("Capture complete: size %i bytes", (int)(image_size));
                         ble_its_img_info_t image_info;
                         image_info.file_size_bytes = image_size;
-
-#if(ARDUCAM_MINI_2MP_PLUS_MODE == 0)
-                        // Flush the first byte when using the non plus version of the sensor (or the JPG image will be corrupted)
-                        arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
-                        image_info.file_size_bytes--;
-#endif
-
                         ble_its_img_info_send(&m_its, &image_info);
                     }
                     break;
@@ -869,13 +860,6 @@ int main(void)
                 
                 ble_its_img_info_t image_info;
                 image_info.file_size_bytes = image_size;
-
-#if(ARDUCAM_MINI_2MP_PLUS_MODE == 0)
-                // Flush the first byte when using the non plus version of the sensor (or the JPG image will be corrupted)
-                arducam_mini_2mp_fillBuffer(img_data_buffer, 1);
-                image_info.file_size_bytes--;
-#endif
-
                 ble_its_img_info_send(&m_its, &image_info);                
             }
         }
