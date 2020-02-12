@@ -12,7 +12,7 @@ The Android companion app can be found here:
 
 Requirements
 ------------
-- nRF5 SDK version 15.3.0
+- nRF5 SDK version 16.0.0
 - nRF52 DK (PCA10040) or nRF52840 DK (PCA10056)
 - Arducam Mini 2MP camera module (OV2640)
 	- [https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY](https://www.amazon.com/Arducam-Module-Megapixels-Arduino-Mega2560/dp/B012UXNDOY "Amazon link")
