@@ -35,9 +35,9 @@ Note: This requires solder bridges SB10-15 and SB20-25 to be soldered/cut, as il
 SoftDevice version
 ------------------
 
-For the nRF52840 use the S140 v6.1.1, provided with SDK 15.3.0. 
+For the nRF52840 use the S140 v7.0.1, provided with SDK v16.0.0. 
 
-For the nRF52832 use the S132 v6.1.1, provided with SDK 15.3.0.
+For the nRF52832 use the S132 v7.0.1, provided with SDK v16.0.0.
 
 Note
 ----
