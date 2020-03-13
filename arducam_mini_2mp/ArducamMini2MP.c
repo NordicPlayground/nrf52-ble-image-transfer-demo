@@ -63,7 +63,7 @@ void arducam_mini_2mp_open(arducam_mini_2mp_init_t *config)
      //Reset the CPLD
     arducam_write_reg(0x07, 0x80);
     nrf_delay_ms(100);
-    arducam_read_reg(0x07, 0x00);
+    arducam_write_reg(0x07, 0x00);
     nrf_delay_ms(100);
     //Check if the ArduCAM SPI bus is OK
     arducam_write_reg(ARDUCHIP_TEST1, 0x55);
